@@ -12,6 +12,7 @@
     { "src": "api/submit-task.js", "use": "@vercel/node" },
     { "src": "api/delete-task.js", "use": "@vercel/node" },
     { "src": "api/sheet-url.js", "use": "@vercel/node" },
+    { "src": "api/team-holiday.js", "use": "@vercel/node" },
     { "src": "api/app.js", "use": "@vercel/node" }
   ],
   "routes": [
@@ -27,6 +28,7 @@
     { "src": "/api/submit-task", "dest": "api/submit-task.js" },
     { "src": "/api/delete-task", "dest": "api/delete-task.js" },
     { "src": "/api/sheet-url", "dest": "api/sheet-url.js" },
+    { "src": "/api/team-holiday", "dest": "api/team-holiday.js" },
     { "src": "/(.*)", "dest": "server.js" }
   ]
 }

@@ -75,7 +75,7 @@ frame.addEventListener('load',()=>{
     if(!name){w.showToast('Please enter a valid person name.','error');return}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){w.showToast('Please enter a valid email address.','error');return}
     try{
-      const response=await fetch('/api/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email})});
+      const response=await fetch('/api/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,team:d.getElementById('person-team-select')?.value||'CBE'})});
       const data=await response.json();
       if(!response.ok)throw new Error(data.error||'Unable to save person');
       const current=selectedPersonSelect;

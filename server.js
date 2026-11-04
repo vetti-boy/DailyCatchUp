@@ -18,6 +18,7 @@ app.all("/api/today-holiday-feed", require("./api/today-holiday-feed"));
 app.all("/api/submit-task", require("./api/submit-task"));
 app.all("/api/delete-task", require("./api/delete-task"));
 app.all("/api/sheet-url", require("./api/sheet-url"));
+app.all("/api/team-holiday", require("./api/team-holiday"));
 
 // Static app route fallback
 app.use((req, res, next) => {

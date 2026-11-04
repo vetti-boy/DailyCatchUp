@@ -37,6 +37,7 @@
         <div class="brand">IP Team Portal</div>
         <div class="top-actions">
             <a id="sheet-link" class="btn btn-ghost" href="#" target="_blank">📊 View Excel Sheet</a>
+            <button class="btn btn-ghost" id="team-holiday-btn" onclick="openTeamHolidayModal()">🌴 Mark Team Holiday</button>
         </div>
     </div>
 
@@ -104,6 +105,40 @@
         </div>
     </div>
 </div>
+
+    <!-- TEAM HOLIDAY MODAL -->
+    <div id="team-holiday-modal" class="modal">
+        <div class="modal-content" style="border-top: 4px solid var(--accent); max-width: 520px; width: 92%;">
+            <h3 style="color: var(--accent); margin-bottom: 8px;">🌴 Mark Team Holiday</h3>
+            <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 16px;">
+                Mark or unmark today's date as <strong>Holiday</strong> in Google Sheets for team members by location.
+            </p>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px;">Select Location / Team:</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary team-choice-btn" id="team-choice-cbe" onclick="selectHolidayTeam('CBE')">🏢 CBE Team</button>
+                    <button type="button" class="btn btn-ghost team-choice-btn" id="team-choice-blr" onclick="selectHolidayTeam('BLR')">🏙️ BLR Team</button>
+                    <button type="button" class="btn btn-ghost team-choice-btn" id="team-choice-both" onclick="selectHolidayTeam('BOTH')">🌐 Both Locations</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <div class="label-row" style="margin-bottom: 6px;">
+                    <label>Affected Team Members (<span id="team-holiday-member-count">0</span>):</label>
+                </div>
+                <div id="team-holiday-members" style="font-size: 0.88rem; color: var(--text); background: var(--surface2-solid); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; max-height: 140px; overflow-y: auto; line-height: 1.6;">
+                    Loading members...
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-ghost" onclick="closeTeamHolidayModal()">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="team-holiday-unmark-btn" onclick="submitTeamHoliday('unmark')">↩️ Unmark Holiday</button>
+                <button type="button" class="btn btn-primary" id="team-holiday-mark-btn" onclick="submitTeamHoliday('mark')">🌴 Mark as Holiday</button>
+            </div>
+        </div>
+    </div>
 
     <!-- SUBMIT CONFIRMATION MODAL -->
     <div id="confirm-modal" class="modal">
@@ -260,10 +295,19 @@
         loadDailyStatus();
     }
 
+    let cachedPeopleList = [];
+
     async function loadOptions() {
         try {
-            const res = await fetch('/api/options');
+            const [res, peopleRes] = await Promise.all([
+                fetch('/api/options'),
+                fetch('/api/people').catch(() => null)
+            ]);
             optionsData = await res.json();
+            if (peopleRes && peopleRes.ok) {
+                const pData = await peopleRes.json();
+                cachedPeopleList = pData.people || [];
+            }
             
             if (!optionsData.names) optionsData.names = [];
             if (!optionsData.projects) optionsData.projects = [];
@@ -469,7 +513,8 @@
     }
 
     function renderManageList() {
-        const list = currentManageType === 'name' ? optionsData.names : optionsData.projects;
+        const isName = currentManageType === 'name';
+        const list = isName ? optionsData.names : optionsData.projects;
         const container = document.getElementById('manage-list-container');
         
         if (!list || list.length === 0) {
@@ -477,12 +522,162 @@
             return;
         }
 
-        container.innerHTML = list.map(item => `
-            <div class="manage-item">
-                <span>${item}</span>
-                <button class="btn btn-danger btn-sm" onclick="removeOptionItem('${item}')">Remove</button>
-            </div>
-        `).join('');
+        container.innerHTML = list.map(item => {
+            if (isName) {
+                const person = (cachedPeopleList || []).find(p => p.name === item);
+                const team = (person && person.team) || (item.toLowerCase() === 'manoj' || item.toLowerCase() === 'sharath' || item.toLowerCase().includes('sriram') ? 'BLR' : 'CBE');
+                const badgeStyle = team === 'BLR' 
+                    ? 'background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid var(--border-hover);'
+                    : 'background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3);';
+
+                return `
+                    <div class="manage-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin-bottom: 6px; background: var(--surface2-solid); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-weight: 500;">${item}</span>
+                            <button type="button" class="btn btn-sm" onclick="togglePersonTeam('${item}')" title="Click to switch location" style="${badgeStyle} font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                                ${team === 'BLR' ? '🏙️ BLR' : '🏢 CBE'}
+                            </button>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="removeOptionItem('${item}')">Remove</button>
+                    </div>
+                `;
+            }
+            return `
+                <div class="manage-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin-bottom: 6px; background: var(--surface2-solid); border-radius: 8px;">
+                    <span>${item}</span>
+                    <button class="btn btn-danger btn-sm" onclick="removeOptionItem('${item}')">Remove</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function togglePersonTeam(name) {
+        let person = (cachedPeopleList || []).find(p => p.name === name);
+        const currentTeam = (person && person.team) || (name.toLowerCase() === 'manoj' || name.toLowerCase() === 'sharath' || name.toLowerCase().includes('sriram') ? 'BLR' : 'CBE');
+        const nextTeam = currentTeam === 'BLR' ? 'CBE' : 'BLR';
+
+        try {
+            const res = await fetch('/api/people', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    email: person?.email || `${name.toLowerCase()}@company.in`,
+                    team: nextTeam
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update team');
+            cachedPeopleList = data.people || [];
+            renderManageList();
+            showToast(`${name} assigned to ${nextTeam} Team`, 'success');
+        } catch (e) {
+            showToast(e.message || 'Error updating team', 'error');
+        }
+    }
+
+    // --- TEAM HOLIDAY CONTROLS ---
+    let currentSelectedHolidayTeam = 'CBE';
+
+    async function openTeamHolidayModal() {
+        const modal = document.getElementById('team-holiday-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        if (!cachedPeopleList || cachedPeopleList.length === 0) {
+            try {
+                const res = await fetch('/api/people');
+                if (res.ok) {
+                    const data = await res.json();
+                    cachedPeopleList = data.people || [];
+                }
+            } catch (e) {}
+        }
+        selectHolidayTeam(currentSelectedHolidayTeam || 'CBE');
+    }
+
+    function closeTeamHolidayModal() {
+        const modal = document.getElementById('team-holiday-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function selectHolidayTeam(team) {
+        currentSelectedHolidayTeam = team;
+        ['cbe', 'blr', 'both'].forEach(t => {
+            const btn = document.getElementById(`team-choice-${t}`);
+            if (btn) {
+                btn.className = t === team.toLowerCase() ? 'btn btn-primary team-choice-btn' : 'btn btn-ghost team-choice-btn';
+            }
+        });
+        updateTeamHolidayPreview();
+    }
+
+    function updateTeamHolidayPreview() {
+        const membersEl = document.getElementById('team-holiday-members');
+        const countEl = document.getElementById('team-holiday-member-count');
+        if (!membersEl) return;
+
+        const filtered = (cachedPeopleList || []).filter(p => {
+            if (currentSelectedHolidayTeam === 'BOTH' || currentSelectedHolidayTeam === 'ALL') return true;
+            return (p.team || 'CBE').toUpperCase() === currentSelectedHolidayTeam;
+        });
+
+        if (countEl) countEl.textContent = filtered.length;
+        if (filtered.length === 0) {
+            membersEl.innerHTML = '<span style="color:var(--muted);">No members found for this selection.</span>';
+            return;
+        }
+
+        membersEl.innerHTML = filtered.map(p => `
+            <span style="display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;margin:3px 4px;">
+                ${p.name} <small style="color:var(--accent);">(${p.team || 'CBE'})</small>
+            </span>
+        `).join(' ');
+    }
+
+    async function submitTeamHoliday(action = 'mark') {
+        const team = currentSelectedHolidayTeam;
+        const teamLabel = team === 'BOTH' ? 'Both Locations (CBE & BLR)' : `${team} Team`;
+        const isUnmark = action === 'unmark';
+
+        const confirmed = await showThemeConfirmModal({
+            title: isUnmark ? '↩️ Unmark Team Holiday' : '🌴 Mark Team Holiday',
+            message: isUnmark
+                ? `Are you sure you want to remove Holiday status for ${teamLabel}?`
+                : `Are you sure you want to mark today as Holiday for ${teamLabel}?`,
+            okText: isUnmark ? 'Yes, Unmark' : 'Yes, Mark Holiday',
+            cancelText: 'Cancel',
+            isDanger: isUnmark
+        });
+        if (!confirmed) return;
+
+        const markBtn = document.getElementById('team-holiday-mark-btn');
+        const unmarkBtn = document.getElementById('team-holiday-unmark-btn');
+        if (markBtn) markBtn.disabled = true;
+        if (unmarkBtn) unmarkBtn.disabled = true;
+
+        try {
+            const res = await fetch('/api/team-holiday', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ team, action })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update team holiday');
+
+            showToast(data.message || `${teamLabel} updated.`, 'success');
+            closeTeamHolidayModal();
+
+            if (typeof loadDailyStatus === 'function') loadDailyStatus();
+            const nameSelect = document.getElementById('name-select');
+            if (nameSelect && nameSelect.value && typeof window.loadTodayLeaveStatus === 'function') {
+                window.loadTodayLeaveStatus(nameSelect.value);
+            }
+        } catch (e) {
+            showToast(e.message || 'Error updating team holiday', 'error');
+        } finally {
+            if (markBtn) markBtn.disabled = false;
+            if (unmarkBtn) unmarkBtn.disabled = false;
+        }
     }
 
     async function removeOptionItem(value) {

@@ -7,10 +7,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === "POST") {
-      const { name, email } = req.body || {};
+      const { name, email, team } = req.body || {};
       return res.status(200).json({
         success: true,
-        people: await upsertPerson(name, email),
+        people: await upsertPerson(name, email, team),
       });
     }
 

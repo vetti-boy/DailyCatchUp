@@ -155,6 +155,7 @@
 
     const isPermission = status === 'On Permission';
     const isFirstHalf = status === 'First Half Leave';
+    const isHoliday = status === 'Holiday' || String(status || '').toLowerCase().startsWith('holiday');
 
     let titleText = '🏖️ Marked as On Leave';
     let descText = 'This person is marked as On Leave for today.';
@@ -168,6 +169,10 @@
       titleText = '🌅 First Half Leave';
       descText = 'First half leave is marked for today. You can still enter today\'s tasks below.';
       unmarkBtn = `<button type="button" class="btn btn-ghost btn-sm" id="unmark-first-half-btn" style="margin-top:12px;">↩️ Unmark First Half Leave</button>`;
+    } else if (isHoliday) {
+      titleText = '🌴 Marked as Holiday';
+      descText = 'This person is marked as Holiday for today.';
+      unmarkBtn = `<button type="button" class="btn btn-ghost btn-sm" id="unmark-holiday-btn" style="margin-top:12px;">↩️ Unmark Holiday</button>`;
     }
 
     panel.innerHTML = `
@@ -481,11 +486,13 @@
       if (!response.ok) return;
 
       const status = String(data.status || '').trim();
-      if (status === 'On Leave' || status === 'First Half Leave' || status === 'On Permission' ||
-          status.startsWith('On Leave') || status.startsWith('First Half Leave') || status.startsWith('On Permission')) {
+      const lower = status.toLowerCase();
+      if (lower === 'on leave' || lower === 'first half leave' || lower === 'on permission' || lower === 'holiday' ||
+          lower.startsWith('on leave') || lower.startsWith('first half leave') || lower.startsWith('on permission') || lower.startsWith('holiday')) {
         let leaveType = 'On Leave';
-        if (status.includes('First Half Leave')) leaveType = 'First Half Leave';
-        else if (status.includes('On Permission')) leaveType = 'On Permission';
+        if (lower.includes('first half leave')) leaveType = 'First Half Leave';
+        else if (lower.includes('on permission')) leaveType = 'On Permission';
+        else if (lower.includes('holiday')) leaveType = 'Holiday';
         showLeaveStatus(leaveType);
       } else if (leaveStatus) {
         hideLeaveStatus();
@@ -516,7 +523,7 @@
       window.showToast('Please select a person first.', 'error');
       return;
     }
-    if (leaveStatus === 'On Leave') {
+    if (leaveStatus === 'On Leave' || leaveStatus === 'Holiday') {
       window.showToast(`${name} is currently marked as On Leave. Unmark the leave status before entering tasks.`, 'info');
       return;
     }

@@ -1,3 +1,16 @@
+Commit: a4167edf2282be04bfbddd789b54c5f4769768ea
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Wed Nov 4 14:55:00 2026 +0530
+Subject: feat: add team-wise holiday marking (CBE, BLR, Both) and team tracking in Redis
+- Add team location tracking ('CBE' | 'BLR') in Redis for team members.
+- Default Manoj, Sharath, and SriRamKarthi to BLR team, and all other members to CBE team.
+- Remove data.json fallback to fetch options, people, and holidays directly from Redis.
+- Add Location / Team dropdown when adding a new person (+ Add New Name).
+- Add location badges with one-click team toggle in Manage Names modal.
+- Add 'Mark Team Holiday' action in header with support for marking or unmarking CBE, BLR, or Both locations as 'Holiday' in Google Sheets.
+- Update report generator and previous status parser to cleanly handle 'Holiday' cell status.
+
+--------------------------------------------------------------------------------
 Commit: 8b494a1d03e0bb214a379ea10c223e1683251f47
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Thu Oct 29 12:30:00 2026 +0530

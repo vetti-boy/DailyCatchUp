@@ -46,7 +46,8 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
   * **`api/previous-status.js`**: Reads previous task entries and handles POST requests for `leave`, `first-half`, `permission`, and `unmark`.
   * **`api/daily-status.js`**: Generates today's daily status report by reading the current sheet tab.
   * **`api/options.js`**: Serves and updates team member names and project drop-down options.
-  * **`api/people.js` & `api/people-feed.js`**: Manages team members and email mappings.
+  * **`api/people.js` & `api/people-feed.js`**: Manages team members, email mappings, and location/team assignments (CBE / BLR).
+  * **`api/team-holiday.js`**: Batch marks or unmarks "Holiday" status for CBE, BLR, or Both teams in Google Sheets.
   * **`api/holidays.js` & `api/today-holiday-feed.js`**: Manages annual holiday schedules.
 
 ### 3. Report Engine (`report.js`)
@@ -55,12 +56,12 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
 * Generates dual output formats:
   1. **Plain Text:** Formatted with bullet points for easy copying into Microsoft Teams.
   2. **HTML:** Styled markup with action buttons (e.g., individual entry deletion).
-* Handles special status strings: `"On Leave"`, `"First Half Leave"`, `"On Permission"`, and `"CatchUp Not Filled Yet"`.
+* Handles special status strings: `"On Leave"`, `"First Half Leave"`, `"On Permission"`, `"Holiday"`, and `"CatchUp Not Filled Yet"`.
 
 ### 4. Storage & Persistence (`storage.js`)
 * Stores dynamic configuration data (team member names, projects, email mappings, holidays).
 * **Vercel / Production:** Uses **Upstash Redis REST API** (supports both standard `KV_REST_API_*` and Upstash `UPSTASH_REDIS_REST_KV_REST_API_*` env vars).
-* **Local Development:** Uses local JSON file fallback (`data.json`).
+* **Redis Persistence:** Directly queries Upstash Redis REST API without local data.json dependency.
 
 ### 5. Google Sheets Integration (`googleapis`)
 * Spreadsheet ID configured via `SPREADSHEET_ID` environment variable.

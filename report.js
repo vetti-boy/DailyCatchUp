@@ -91,8 +91,12 @@ function generateReport(rows, knownProjects = []) {
         const taskText = String(tasks).trim();
 
         const lowerTask = taskText.toLowerCase();
-        if (lowerTask === "on leave" || lowerTask === "first half leave" || lowerTask === "on permission") {
-            const displayLabel = lowerTask === "on leave" ? "On Leave" : (lowerTask === "first half leave" ? "First Half Leave" : "On Permission");
+        if (lowerTask === "on leave" || lowerTask === "first half leave" || lowerTask === "on permission" || lowerTask === "holiday") {
+            const displayLabel = lowerTask === "on leave"
+                ? "On Leave"
+                : (lowerTask === "first half leave"
+                    ? "First Half Leave"
+                    : (lowerTask === "on permission" ? "On Permission" : "Holiday"));
             report += `\t  • ${displayLabel}\n`;
             htmlReport += `<ul style="margin:2px 0px;padding-left:20px;"><li>${displayLabel}</li></ul>`;
             copyHtml += `<ul style="margin:2px 0px;padding-left:20px;"><li>${displayLabel}</li></ul>`;
