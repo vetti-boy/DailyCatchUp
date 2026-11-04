@@ -1,3 +1,11 @@
+Commit: 0ccb676f4d16542a35eb348daeab0b6ea8d024c1
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Wed Nov 4 15:28:00 2026 +0530
+Subject: fix: consolidate serverless functions in vercel.json to comply with Vercel Hobby plan limit (<= 12)
+- Route sheet-url and team-holiday through server.js fallback.
+- Reduce total serverless function builds from 13 to 11 to satisfy Vercel Hobby plan constraint.
+
+--------------------------------------------------------------------------------
 Commit: 3dc33d167acc8c10724c1f642df901d342eb4b74
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Wed Nov 4 14:55:00 2026 +0530
