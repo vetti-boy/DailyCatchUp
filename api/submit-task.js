@@ -97,7 +97,10 @@ module.exports = async (req, res) => {
           .map((l) => l.replace(HYPHEN_REGEX, "").trim())
           .filter(Boolean);
         if (lines.length === 0) return "";
-        const project = String(t.project || "").trim();
+        const project = String(t.project || "")
+          .replace(HYPHEN_REGEX, " ")
+          .replace(/\s+/g, " ")
+          .trim();
         const firstLine = `${project} - ${lines[0].replace(/^[•*\d+\.]\s*/, "")}`;
         const restLines = lines
           .slice(1)

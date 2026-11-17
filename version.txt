@@ -1,3 +1,14 @@
+Commit: 0280bf4f2dc5411a4336842720ee192065885a43
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 17 13:25:00 2026 +0530
+Subject: fix: restrict hyphens when adding new project names and sanitize existing entries
+- Enforce hyphen restrictions in the Add New Project input modal (keyboard typing, beforeinput, paste, and input events).
+- Show "(No Hyphens Allowed)" indicator and placeholder when adding a project.
+- Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
+- Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
+- Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
 Commit: 0ccb676f4d16542a35eb348daeab0b6ea8d024c1
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Wed Nov 4 15:28:00 2026 +0530

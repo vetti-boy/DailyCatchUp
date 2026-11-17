@@ -83,7 +83,7 @@
             <h3 id="input-modal-title" style="color: var(--accent); margin-bottom: 12px;">Add New Entry</h3>
             <div class="form-group">
                 <label id="input-modal-label">Enter Details:</label>
-                <input type="text" id="input-modal-value" placeholder="Type here..." />
+                <input type="text" id="input-modal-value" placeholder="Type here..." onkeydown="if(event.key === 'Enter') submitInputModal()" />
             </div>
             <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
                 <button class="btn btn-ghost" onclick="closeInputModal()">Cancel</button>
@@ -196,7 +196,7 @@
     }
     window.showToast = showToast;
 
-    // --- TASK INPUT RESTRICTIONS (RESTRICT HYPHENS) ---
+    // --- TASK & PROJECT INPUT RESTRICTIONS (RESTRICT HYPHENS) ---
     const HYPHEN_REGEX_TEST = /[-–—−‑‒―\u2010-\u2015\u2212\uFE63\uFF0D]/;
 
     function isHyphenChar(str) {
@@ -209,7 +209,7 @@
     window.stripHyphens = stripHyphens;
 
     let lastHyphenToastTime = 0;
-    function notifyHyphenRestricted(message = 'Hyphens (-) are not allowed in task details.') {
+    function notifyHyphenRestricted(message = 'Hyphens (-) are not allowed.') {
         const now = Date.now();
         if (now - lastHyphenToastTime > 1800) {
             lastHyphenToastTime = now;
@@ -217,20 +217,40 @@
         }
     }
 
+    function getHyphenRestrictionType(target) {
+        if (!target) return null;
+        if (target.matches && target.matches('.task-input')) return 'task';
+        if (target.id === 'input-modal-value' && activeInputType === 'project') return 'project';
+        return null;
+    }
+
+    function getHyphenMessage(type, action = 'type') {
+        if (type === 'project') {
+            return action === 'paste'
+                ? 'Hyphens (-) were removed from project name.'
+                : 'Hyphens (-) are not allowed in project names.';
+        }
+        return action === 'paste'
+            ? 'Hyphens (-) were removed from pasted text.'
+            : 'Hyphens (-) are not allowed in task details.';
+    }
+
     // Intercept keyboard typing of hyphens/dashes
     document.addEventListener('keydown', (e) => {
-        if (!e.target || !e.target.matches || !e.target.matches('.task-input')) return;
+        const restrictionType = getHyphenRestrictionType(e.target);
+        if (!restrictionType) return;
         if (!e.ctrlKey && !e.metaKey) {
             if (isHyphenChar(e.key)) {
                 e.preventDefault();
-                notifyHyphenRestricted('Hyphens (-) are not allowed in task details.');
+                notifyHyphenRestricted(getHyphenMessage(restrictionType, 'type'));
             }
         }
     });
 
     // Intercept beforeinput (virtual keyboards, dictation, IME)
     document.addEventListener('beforeinput', (e) => {
-        if (!e.target || !e.target.matches || !e.target.matches('.task-input')) return;
+        const restrictionType = getHyphenRestrictionType(e.target);
+        if (!restrictionType) return;
         if (e.data && isHyphenChar(e.data)) {
             e.preventDefault();
             const target = e.target;
@@ -243,14 +263,15 @@
                 target.selectionStart = target.selectionEnd = start + cleaned.length;
                 target.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            notifyHyphenRestricted('Hyphens (-) are not allowed in task details.');
+            notifyHyphenRestricted(getHyphenMessage(restrictionType, 'type'));
         }
     });
 
     // Strip hyphens on paste
     document.addEventListener('paste', (e) => {
         const target = e.target;
-        if (!target || !target.matches || !target.matches('.task-input')) return;
+        const restrictionType = getHyphenRestrictionType(target);
+        if (!restrictionType) return;
         const clipboard = e.clipboardData || window.clipboardData;
         const pasted = clipboard ? clipboard.getData('text') : '';
         if (pasted && isHyphenChar(pasted)) {
@@ -262,14 +283,15 @@
             target.value = val.slice(0, start) + cleaned + val.slice(end);
             target.selectionStart = target.selectionEnd = start + cleaned.length;
             target.dispatchEvent(new Event('input', { bubbles: true }));
-            notifyHyphenRestricted('Hyphens (-) were removed from pasted text.');
+            notifyHyphenRestricted(getHyphenMessage(restrictionType, 'paste'));
         }
     });
 
     // Fallback on input event (drag & drop, autocompletion)
     document.addEventListener('input', (e) => {
         const target = e.target;
-        if (!target || !target.matches || !target.matches('.task-input')) return;
+        const restrictionType = getHyphenRestrictionType(target);
+        if (!restrictionType) return;
         if (isHyphenChar(target.value)) {
             const start = target.selectionStart;
             const end = target.selectionEnd;
@@ -279,7 +301,7 @@
             target.value = stripHyphens(oldVal);
             target.selectionStart = Math.max(0, start - removedBeforeStart);
             target.selectionEnd = Math.max(0, end - removedBeforeEnd);
-            notifyHyphenRestricted('Hyphens (-) are not allowed in task details.');
+            notifyHyphenRestricted(getHyphenMessage(restrictionType, 'type'));
         }
     });
 
@@ -451,11 +473,22 @@
         if (selectElem.value === '__ADD_NEW__') {
             activeSelectElem = selectElem;
             activeInputType = type;
+            window.activeInputType = type;
             
-            document.getElementById('input-modal-title').textContent = type === 'name' ? '👤 Add New Name' : '📁 Add New Project';
-            document.getElementById('input-modal-label').textContent = type === 'name' ? 'Enter Person Name:' : 'Enter Project Name:';
-            
+            const titleElem = document.getElementById('input-modal-title');
+            const labelElem = document.getElementById('input-modal-label');
             const inputVal = document.getElementById('input-modal-value');
+            
+            if (type === 'project') {
+                titleElem.textContent = '📁 Add New Project';
+                labelElem.innerHTML = 'Enter Project Name: <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase;">(No Hyphens Allowed)</span>';
+                inputVal.placeholder = 'Type project name (no hyphens)...';
+            } else {
+                titleElem.textContent = '👤 Add New Name';
+                labelElem.textContent = 'Enter Person Name:';
+                inputVal.placeholder = 'Type here...';
+            }
+            
             inputVal.value = '';
             document.getElementById('input-modal').style.display = 'flex';
             setTimeout(() => inputVal.focus(), 100);
@@ -467,11 +500,20 @@
         document.getElementById('input-modal').style.display = 'none';
         activeSelectElem = null;
         activeInputType = "";
+        window.activeInputType = "";
     }
 
     async function submitInputModal() {
         const valInput = document.getElementById('input-modal-value');
-        const trimmed = valInput.value.trim();
+        let trimmed = valInput.value.trim();
+
+        if (activeInputType === 'project') {
+            if (isHyphenChar(trimmed)) {
+                showToast("Hyphens (-) are not allowed in project names.", "error");
+                valInput.value = stripHyphens(trimmed);
+                return;
+            }
+        }
 
         if (!trimmed) {
             showToast(`Please enter a valid ${activeInputType} name.`, "error");
@@ -479,11 +521,15 @@
         }
 
         try {
-            await fetch('/api/options', {
+            const res = await fetch('/api/options', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: activeInputType, value: trimmed })
             });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || `Failed to add ${activeInputType}`);
+            }
             
             const currentElem = activeSelectElem;
             await loadOptions();
@@ -494,8 +540,11 @@
             
             showToast(`Added new ${activeInputType}: ${trimmed}`, "success");
             document.getElementById('input-modal').style.display = 'none';
+            activeSelectElem = null;
+            activeInputType = "";
+            window.activeInputType = "";
         } catch (e) {
-            showToast(`Failed to add ${activeInputType}`, "error");
+            showToast(e.message || `Failed to add ${activeInputType}`, "error");
         }
     }
 

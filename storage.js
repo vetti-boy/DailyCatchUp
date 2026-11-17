@@ -10,6 +10,9 @@ const redisUrl = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL || process.env.U
 const redisToken = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 
+const HYPHEN_REGEX = /[-–—−‑‒―\u2010-\u2015\u2212\uFE63\uFF0D]/;
+const HYPHEN_GLOBAL_REGEX = /[-–—−‑‒―\u2010-\u2015\u2212\uFE63\uFF0D]/g;
+
 function sortValues(values) {
   return [...new Set(values || [])].sort((a, b) =>
     String(a).localeCompare(String(b), undefined, { sensitivity: "base" })
@@ -26,9 +29,10 @@ function requireRedis() {
 
 async function ensureRedisInitialized() {
   requireRedis();
-  const [names, teams] = await Promise.all([
+  const [names, teams, projects] = await Promise.all([
     redis.smembers(REDIS_NAMES_KEY),
     redis.hgetall(REDIS_PEOPLE_TEAMS_KEY),
+    redis.smembers(REDIS_PROJECTS_KEY),
   ]);
   const missingMap = {};
   for (const name of names || []) {
@@ -38,6 +42,17 @@ async function ensureRedisInitialized() {
   }
   if (Object.keys(missingMap).length > 0) {
     await redis.hset(REDIS_PEOPLE_TEAMS_KEY, missingMap);
+  }
+
+  // Automatically sanitize any existing project names in Redis that contain hyphens
+  for (const proj of projects || []) {
+    if (HYPHEN_REGEX.test(proj)) {
+      const sanitized = proj.replace(HYPHEN_GLOBAL_REGEX, " ").replace(/\s+/g, " ").trim();
+      await redis.srem(REDIS_PROJECTS_KEY, proj);
+      if (sanitized) {
+        await redis.sadd(REDIS_PROJECTS_KEY, sanitized);
+      }
+    }
   }
 }
 
@@ -53,6 +68,11 @@ async function getOptions() {
 
 async function addOption(type, value) {
   const normalized = String(value || "").trim();
+  if (type === "project" && HYPHEN_REGEX.test(normalized)) {
+    const err = new Error("Hyphens (-) are not allowed in project names.");
+    err.status = 400;
+    throw err;
+  }
   if (!normalized) return getOptions();
   requireRedis();
   await ensureRedisInitialized();
