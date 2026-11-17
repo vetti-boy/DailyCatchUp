@@ -1,4 +1,4 @@
-Commit: 0280bf4f2dc5411a4336842720ee192065885a43
+Commit: 9e298a552ecab4303e5fa7fa76da4c0b42f396c7
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 17 13:25:00 2026 +0530
 Subject: fix: restrict hyphens when adding new project names and sanitize existing entries
