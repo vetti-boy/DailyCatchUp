@@ -37,6 +37,7 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
   * **Mark On Leave (🏖️):** Saves `"On Leave"` to the sheet and hides task entry fields.
   * **Mark First Half Leave (🌅):** Saves `"First Half Leave"` and leaves task entry fields visible for second-half tasks.
   * **Mark On Permission (⏱️):** Saves `"On Permission"` and leaves task entry fields visible for remaining tasks.
+  * **Mark On Duty (💼):** Saves `"On Duty"` to the sheet and leaves task entry fields visible for remaining tasks.
   * **Status Panel & Confirmation Modals:** Renders active status banners and dark portal-themed confirmation dialogs.
 * **`holiday-ui.js`**: UI modal for managing government/company holidays with custom dark-themed Add/Edit forms and confirmation dialogs.
 
@@ -57,7 +58,7 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
 * Generates dual output formats:
   1. **Plain Text:** Formatted with bullet points for easy copying into Microsoft Teams.
   2. **HTML:** Styled markup with action buttons (e.g., individual entry deletion).
-* Handles special status strings: `"On Leave"`, `"First Half Leave"`, `"On Permission"`, `"Holiday"`, and `"CatchUp Not Filled Yet"`.
+* Handles special status strings: `"On Leave"`, `"First Half Leave"`, `"On Permission"`, `"On Duty"`, `"Holiday"`, and `"CatchUp Not Filled Yet"`.
 
 ### 4. Storage & Persistence (`storage.js`)
 * Stores dynamic configuration data (team member names, projects, email mappings, holidays).

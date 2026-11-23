@@ -14,7 +14,7 @@ function sheetNameFor(date) {
 
 function parseStatus(status, knownProjects) {
   const text = String(status || "").trim();
-  if (!text || /^catchup not filled$/i.test(text) || /^on leave$/i.test(text) || /^holiday$/i.test(text)) return [];
+  if (!text || /^catchup not filled$/i.test(text) || /^on leave$/i.test(text) || /^on duty$/i.test(text) || /^holiday$/i.test(text)) return [];
 
   const projects = (knownProjects || [])
     .map((p) => String(p).trim())
@@ -29,6 +29,7 @@ function parseStatus(status, knownProjects) {
     if (
       /^first half leave$/i.test(line) ||
       /^on permission$/i.test(line) ||
+      /^on duty$/i.test(line) ||
       /^on leave$/i.test(line) ||
       /^holiday$/i.test(line) ||
       /^catchup not filled$/i.test(line)
@@ -238,6 +239,7 @@ module.exports = async (req, res) => {
         leave: "On Leave",
         "first-half": "First Half Leave",
         permission: "On Permission",
+        duty: "On Duty",
         holiday: "Holiday",
         unmark: "",
       };
@@ -268,6 +270,7 @@ module.exports = async (req, res) => {
         leave: `Marked ${name} as On Leave.`,
         "first-half": `Marked ${name} as First Half Leave.`,
         permission: `Marked ${name} as On Permission.`,
+        duty: `Marked ${name} as On Duty.`,
         holiday: `Marked ${name} as Holiday.`,
         unmark: `Status removed for ${name}.`,
       };

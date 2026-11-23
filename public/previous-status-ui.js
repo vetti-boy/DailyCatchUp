@@ -90,7 +90,13 @@
     permissionButton.textContent = '⏱️ Mark On Permission';
     permissionButton.onclick = markOnPermission;
 
-    wrapper.append(previousButton, leaveButton, firstHalfButton, permissionButton);
+    const dutyButton = document.createElement('button');
+    dutyButton.type = 'button';
+    dutyButton.className = 'btn btn-ghost btn-sm';
+    dutyButton.textContent = '💼 Mark On Duty';
+    dutyButton.onclick = markOnDuty;
+
+    wrapper.append(previousButton, leaveButton, firstHalfButton, permissionButton, dutyButton);
     nameSelect.insertAdjacentElement('afterend', wrapper);
     applyTabOrder();
   }
@@ -153,6 +159,7 @@
       container.parentElement.insertBefore(panel, container);
     }
 
+    const isDuty = status === 'On Duty';
     const isPermission = status === 'On Permission';
     const isFirstHalf = status === 'First Half Leave';
     const isHoliday = status === 'Holiday' || String(status || '').toLowerCase().startsWith('holiday');
@@ -161,7 +168,11 @@
     let descText = 'This person is marked as On Leave for today.';
     let unmarkBtn = `<button type="button" class="btn btn-ghost btn-sm" id="unmark-leave-btn" style="margin-top:12px;">↩️ Unmark On Leave</button>`;
 
-    if (isPermission) {
+    if (isDuty) {
+      titleText = '💼 Marked On Duty';
+      descText = 'On Duty is marked for today. You can still enter today\'s tasks below.';
+      unmarkBtn = `<button type="button" class="btn btn-ghost btn-sm" id="unmark-duty-btn" style="margin-top:12px;">↩️ Unmark On Duty</button>`;
+    } else if (isPermission) {
       titleText = '⏱️ Marked On Permission';
       descText = 'On permission is marked for today. You can still enter today\'s tasks below.';
       unmarkBtn = `<button type="button" class="btn btn-ghost btn-sm" id="unmark-permission-btn" style="margin-top:12px;">↩️ Unmark On Permission</button>`;
@@ -181,7 +192,10 @@
       ${unmarkBtn}
     `;
 
-    if (isPermission) {
+    if (isDuty) {
+      setTaskEntryVisibility(true);
+      $('unmark-duty-btn').onclick = () => unmarkLeave('duty');
+    } else if (isPermission) {
       setTaskEntryVisibility(true);
       $('unmark-permission-btn').onclick = () => unmarkLeave('permission');
     } else if (isFirstHalf) {
@@ -236,18 +250,19 @@
 
   function showLeaveConfirmation(name, type = 'leave') {
     return new Promise((resolve) => {
+      const isDuty = type === 'duty';
       const isPermission = type === 'permission';
       const isFirstHalf = type === 'first-half';
-      const modalId = isPermission ? 'permission-confirm-modal' : (isFirstHalf ? 'first-half-confirm-modal' : 'leave-confirm-modal');
+      const modalId = isDuty ? 'duty-confirm-modal' : (isPermission ? 'permission-confirm-modal' : (isFirstHalf ? 'first-half-confirm-modal' : 'leave-confirm-modal'));
       let modal = $(modalId);
       if (!modal) {
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'modal';
-        const title = isPermission ? '⏱️ Mark On Permission' : (isFirstHalf ? '🌅 Mark First Half Leave' : '🏖️ Mark On Leave');
-        const label = isPermission ? 'On Permission' : (isFirstHalf ? 'First Half Leave' : 'On Leave');
-        const desc = isPermission ? 'This will save "On Permission" in the Google Sheet.' : (isFirstHalf ? 'This will save "First Half Leave" in the Google Sheet.' : 'Any existing entry for this person today will be replaced with "On Leave".');
-        const btnText = isPermission ? 'Yes, Mark On Permission' : (isFirstHalf ? 'Yes, Mark First Half Leave' : 'Yes, Mark On Leave');
+        const title = isDuty ? '💼 Mark On Duty' : (isPermission ? '⏱️ Mark On Permission' : (isFirstHalf ? '🌅 Mark First Half Leave' : '🏖️ Mark On Leave'));
+        const label = isDuty ? 'On Duty' : (isPermission ? 'On Permission' : (isFirstHalf ? 'First Half Leave' : 'On Leave'));
+        const desc = isDuty ? 'This will save "On Duty" in the Google Sheet.' : (isPermission ? 'This will save "On Permission" in the Google Sheet.' : (isFirstHalf ? 'This will save "First Half Leave" in the Google Sheet.' : 'Any existing entry for this person today will be replaced with "On Leave".'));
+        const btnText = isDuty ? 'Yes, Mark On Duty' : (isPermission ? 'Yes, Mark On Permission' : (isFirstHalf ? 'Yes, Mark First Half Leave' : 'Yes, Mark On Leave'));
 
         modal.innerHTML = `
           <div class="modal-content" style="border-top: 4px solid var(--accent);">
@@ -447,12 +462,47 @@
     }
   }
 
+  async function markOnDuty() {
+    const name = selectedName();
+    if (!name || name === '__ADD_NEW__') {
+      window.showToast('Please select a person first.', 'error');
+      return;
+    }
+
+    refreshDirtyState();
+    if (dirty) {
+      const confirmed = await showOverwriteConfirmation(name);
+      if (!confirmed) return;
+    }
+
+    const confirmed = await showLeaveConfirmation(name, 'duty');
+    if (!confirmed) return;
+
+    const buttons = $('individual-status-actions')?.querySelectorAll('button');
+    const dutyButton = buttons && buttons[4];
+    if (dutyButton) { dutyButton.disabled = true; dutyButton.textContent = '💼 Saving...'; }
+
+    try {
+      const data = await postLeaveAction('duty');
+      showLeaveStatus('On Duty');
+      markClean();
+      window.showToast(data.message || `${name} marked as On Duty.`, 'success');
+      if (typeof window.loadDailyStatus === 'function') window.loadDailyStatus();
+    } catch (error) {
+      console.error('On Duty error:', error);
+      window.showToast(error.message || 'Unable to mark On Duty.', 'error');
+    } finally {
+      if (dutyButton) { dutyButton.disabled = false; dutyButton.textContent = '💼 Mark On Duty'; }
+    }
+  }
+
   async function unmarkLeave(previousStatusType) {
     const name = selectedName();
     if (!name || name === '__ADD_NEW__') return;
 
     let button = $('unmark-leave-btn');
-    if (previousStatusType === 'permission') button = $('unmark-permission-btn');
+    if (previousStatusType === 'duty') button = $('unmark-duty-btn');
+    else if (previousStatusType === 'permission') button = $('unmark-permission-btn');
     else if (previousStatusType === 'first-half') button = $('unmark-first-half-btn');
 
     if (button) { button.disabled = true; button.textContent = '↩️ Removing...'; }
@@ -472,7 +522,8 @@
       console.error('Unmark status error:', error);
       window.showToast(error.message || 'Unable to remove status.', 'error');
       let resetLabel = '↩️ Unmark On Leave';
-      if (previousStatusType === 'permission') resetLabel = '↩️ Unmark On Permission';
+      if (previousStatusType === 'duty') resetLabel = '↩️ Unmark On Duty';
+      else if (previousStatusType === 'permission') resetLabel = '↩️ Unmark On Permission';
       else if (previousStatusType === 'first-half') resetLabel = '↩️ Unmark First Half Leave';
       if (button) { button.disabled = false; button.textContent = resetLabel; }
     }
@@ -487,11 +538,12 @@
 
       const status = String(data.status || '').trim();
       const lower = status.toLowerCase();
-      if (lower === 'on leave' || lower === 'first half leave' || lower === 'on permission' || lower === 'holiday' ||
-          lower.startsWith('on leave') || lower.startsWith('first half leave') || lower.startsWith('on permission') || lower.startsWith('holiday')) {
+      if (lower === 'on leave' || lower === 'first half leave' || lower === 'on permission' || lower === 'on duty' || lower === 'holiday' ||
+          lower.startsWith('on leave') || lower.startsWith('first half leave') || lower.startsWith('on permission') || lower.startsWith('on duty') || lower.startsWith('holiday')) {
         let leaveType = 'On Leave';
         if (lower.includes('first half leave')) leaveType = 'First Half Leave';
         else if (lower.includes('on permission')) leaveType = 'On Permission';
+        else if (lower.includes('on duty')) leaveType = 'On Duty';
         else if (lower.includes('holiday')) leaveType = 'Holiday';
         showLeaveStatus(leaveType);
       } else if (leaveStatus) {
