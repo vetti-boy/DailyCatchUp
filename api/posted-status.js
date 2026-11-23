@@ -25,13 +25,12 @@ function buildRssFeed({ isPosted, date, lastPostedTime, when = "posted" }) {
       ? `Daily Catch Up for ${date} has already been posted to Teams.`
       : `Daily Catch Up for ${date} is pending and not yet posted to Teams.`;
     const guid = `dailycatchup-${isPosted ? "posted" : "pending"}-${date}`;
-    const pubDate = now;
+    const pubDate = lastPostedTime ? new Date(lastPostedTime).toUTCString() : now;
 
     item = `
     <item>
       <title>${escapeXml(title)}</title>
       <description>${escapeXml(desc)}</description>
-      <link>https://daily-catch-up.vercel.app/</link>
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="false">${escapeXml(guid)}</guid>
     </item>`;
@@ -60,6 +59,26 @@ module.exports = async (req, res) => {
     const today = getZonedTodayDate();
     const targetDate = req.query?.date || req.body?.date || today;
 
+    // Handle Quick Action on GET: ?action=mark or ?action=reset (works for both RSS connector and JSON)
+    if (req.method === "GET" && req.query?.action) {
+      const action = String(req.query.action).toLowerCase();
+      if (action === "mark" || action === "post" || action === "set") {
+        await setPostedStatus({
+          date: targetDate,
+          posted: true,
+          by: req.query.by || (isFeedRequest ? "PowerAutomate-RSS" : "PowerAutomate-GET"),
+        });
+      } else if (action === "reset" || action === "unmark" || action === "clear") {
+        await resetPostedStatus(targetDate);
+      }
+
+      // If called as JSON API (not RSS), return JSON directly
+      if (!isFeedRequest) {
+        const updated = await getPostedStatus(targetDate);
+        return res.status(200).json({ success: true, ...updated });
+      }
+    }
+
     // Handle RSS Feed requests (Power Automate "List all RSS feed items")
     if (isFeedRequest && req.method === "GET") {
       const statusData = await getPostedStatus(targetDate);
@@ -76,23 +95,6 @@ module.exports = async (req, res) => {
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       return res.status(200).send(xml);
-    }
-
-    // Handle Quick Action on GET: ?action=mark or ?action=reset
-    if (req.method === "GET" && req.query?.action) {
-      const action = String(req.query.action).toLowerCase();
-      if (action === "mark" || action === "post" || action === "set") {
-        const updated = await setPostedStatus({
-          date: targetDate,
-          posted: true,
-          by: req.query.by || "PowerAutomate-GET",
-        });
-        return res.status(200).json({ success: true, ...updated });
-      }
-      if (action === "reset" || action === "unmark" || action === "clear") {
-        const updated = await resetPostedStatus(targetDate);
-        return res.status(200).json({ success: true, ...updated });
-      }
     }
 
     // Standard GET status (JSON)
