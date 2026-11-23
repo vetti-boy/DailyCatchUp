@@ -25,12 +25,13 @@ function buildRssFeed({ isPosted, date, lastPostedTime, when = "posted" }) {
       ? `Daily Catch Up for ${date} has already been posted to Teams.`
       : `Daily Catch Up for ${date} is pending and not yet posted to Teams.`;
     const guid = `dailycatchup-${isPosted ? "posted" : "pending"}-${date}`;
-    const pubDate = lastPostedTime ? new Date(lastPostedTime).toUTCString() : now;
+    const pubDate = now;
 
     item = `
     <item>
       <title>${escapeXml(title)}</title>
       <description>${escapeXml(desc)}</description>
+      <link>https://daily-catch-up.vercel.app/</link>
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="false">${escapeXml(guid)}</guid>
     </item>`;
@@ -71,7 +72,9 @@ module.exports = async (req, res) => {
       });
 
       res.setHeader("Content-Type", "application/rss+xml; charset=utf-8");
-      res.setHeader("Cache-Control", "no-store, max-age=0");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       return res.status(200).send(xml);
     }
 
