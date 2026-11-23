@@ -1,4 +1,4 @@
-Commit: PENDING
+Commit: 52b6de34bf99781cf427e052ef137bb349ea1826
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Mon Nov 23 18:22:00 2026 +0530
 Subject: feat: add On Duty (OD) status option across UI, backend, and status reports
@@ -22,7 +22,7 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Defensively sanitize project names in api/submit-task.js.
 
 --------------------------------------------------------------------------------
-Commit: PENDING
+Commit: 52b6de34bf99781cf427e052ef137bb349ea1826
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Mon Nov 23 18:22:00 2026 +0530
 Subject: feat: add On Duty (OD) status option across UI, backend, and status reports
