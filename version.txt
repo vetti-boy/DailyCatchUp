@@ -1,12 +1,12 @@
-Commit: PENDING
+Commit: 579676f4949510408d6c8b056157f4977ee0d180
 Author: Manoj S <mailfortempusage@gmail.com>
-Date:   Mon Nov 23 13:12:00 2026 +0530
-Subject: feat: add Redis-backed Teams CatchUp posted status and RSS feed for Power Automate
+Date:   Mon Nov 23 18:07:00 2026 +0530
+Subject: feat: add Redis-backed Teams CatchUp posted status and free RSS-based status update for Power Automate
 - Add getPostedStatus, setPostedStatus, resetPostedStatus in storage.js using Redis key dailycatchup:posted-status.
 - Create api/posted-status.js supporting REST JSON (GET/POST/DELETE) and RSS 2.0 XML feed (/api/today-posted-feed).
-- Enable high-speed (~1-2s) Power Automate check & update, eliminating slow Google Sheets calls (1m 24s get status and 2m 45s update row).
-- Add real-time Teams posted status indicator and toggle controls in web UI (public/index.html).
-- Mount routes in server.js and vercel.json respecting Vercel Hobby plan 12-function limit.
+- Enable high-speed (~1s) Power Automate status check and status update without needing premium HTTP license (via RSS connector with ?action=mark).
+- Add read-only real-time Teams posted status indicator banner in web UI (public/index.html).
+- Route posted-status via server.js to strictly adhere to Vercel Hobby plan 11 serverless functions limit.
 
 --------------------------------------------------------------------------------
 Commit: 9e298a552ecab4303e5fa7fa76da4c0b42f396c7
@@ -20,15 +20,15 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Defensively sanitize project names in api/submit-task.js.
 
 --------------------------------------------------------------------------------
-Commit: PENDING
+Commit: 579676f4949510408d6c8b056157f4977ee0d180
 Author: Manoj S <mailfortempusage@gmail.com>
-Date:   Mon Nov 23 13:12:00 2026 +0530
-Subject: feat: add Redis-backed Teams CatchUp posted status and RSS feed for Power Automate
+Date:   Mon Nov 23 18:07:00 2026 +0530
+Subject: feat: add Redis-backed Teams CatchUp posted status and free RSS-based status update for Power Automate
 - Add getPostedStatus, setPostedStatus, resetPostedStatus in storage.js using Redis key dailycatchup:posted-status.
 - Create api/posted-status.js supporting REST JSON (GET/POST/DELETE) and RSS 2.0 XML feed (/api/today-posted-feed).
-- Enable high-speed (~1-2s) Power Automate check & update, eliminating slow Google Sheets calls (1m 24s get status and 2m 45s update row).
-- Add real-time Teams posted status indicator and toggle controls in web UI (public/index.html).
-- Mount routes in server.js and vercel.json respecting Vercel Hobby plan 12-function limit.
+- Enable high-speed (~1s) Power Automate status check and status update without needing premium HTTP license (via RSS connector with ?action=mark).
+- Add read-only real-time Teams posted status indicator banner in web UI (public/index.html).
+- Route posted-status via server.js to strictly adhere to Vercel Hobby plan 11 serverless functions limit.
 
 --------------------------------------------------------------------------------
 Commit: 9e298a552ecab4303e5fa7fa76da4c0b42f396c7
