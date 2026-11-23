@@ -49,6 +49,7 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
   * **`api/people.js` & `api/people-feed.js`**: Manages team members, email mappings, and location/team assignments (CBE / BLR).
   * **`api/team-holiday.js`**: Batch marks or unmarks "Holiday" status for CBE, BLR, or Both teams in Google Sheets.
   * **`api/holidays.js` & `api/today-holiday-feed.js`**: Manages annual holiday schedules.
+  * **`api/posted-status.js` (routes `/api/posted-status` & `/api/today-posted-feed`)**: Real-time Redis-backed Teams CatchUp posted status tracker and RSS feed for high-speed Power Automate execution (eliminates slow Google Sheets status queries).
 
 ### 3. Report Engine (`report.js`)
 * Processes raw rows retrieved from Google Sheets.
@@ -134,6 +135,7 @@ User selects Name ➔ Clicks "Use Previous Day Status"
 | [`report.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/report.js) | Status report generator (Plain Text & HTML). |
 | [`storage.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/storage.js) | Storage abstraction for names, projects, emails, and holidays with Upstash Redis REST support. |
 | [`api/previous-status.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/api/previous-status.js) | Handles Previous Day status lookup and Leave/Permission state updates. |
+| [`api/posted-status.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/api/posted-status.js) | Fast Redis-backed status tracking & RSS feed for Power Automate check & update. |
 | [`public/previous-status-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/previous-status-ui.js) | Front-end controller for status buttons (including On Permission ⏱️), modals, and auto-fill. |
 | [`public/holiday-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/holiday-ui.js) | Holiday management UI controller with custom Add/Edit modals and date pickers. |
 | [`public/people-email-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/people-email-ui.js) | Person email mapping input controller for Manage Names. |

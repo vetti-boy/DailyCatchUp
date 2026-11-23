@@ -15,6 +15,8 @@ app.all("/api/holidays", require("./api/holidays"));
 app.all("/api/people", require("./api/people"));
 app.all("/api/people-feed", require("./api/people-feed"));
 app.all("/api/today-holiday-feed", require("./api/today-holiday-feed"));
+app.all("/api/posted-status", require("./api/posted-status"));
+app.all("/api/today-posted-feed", require("./api/posted-status"));
 app.all("/api/submit-task", require("./api/submit-task"));
 app.all("/api/delete-task", require("./api/delete-task"));
 app.all("/api/sheet-url", require("./api/sheet-url"));

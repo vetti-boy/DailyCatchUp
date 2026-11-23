@@ -5,6 +5,8 @@ const REDIS_NAMES_KEY = `${REDIS_PREFIX}:options:names`;
 const REDIS_PROJECTS_KEY = `${REDIS_PREFIX}:options:projects`;
 const REDIS_PEOPLE_KEY = `${REDIS_PREFIX}:people`;
 const REDIS_PEOPLE_TEAMS_KEY = `${REDIS_PREFIX}:people:teams`;
+const REDIS_POSTED_STATUS_KEY = `${REDIS_PREFIX}:posted-status`;
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Kolkata";
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -53,6 +55,15 @@ async function ensureRedisInitialized() {
         await redis.sadd(REDIS_PROJECTS_KEY, sanitized);
       }
     }
+  }
+
+  // Ensure posted-status hash key exists so it is visible in Redis Data Browser
+  const statusExists = await redis.exists(REDIS_POSTED_STATUS_KEY);
+  if (!statusExists) {
+    await redis.hset(REDIS_POSTED_STATUS_KEY, {
+      initialized: "true",
+      lastPostedDate: "",
+    });
   }
 }
 
@@ -317,6 +328,93 @@ async function deleteHoliday(year, date) {
   return getHolidays(y);
 }
 
+function getZonedTodayDate(timeZone = APP_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr || "";
+  const [y, m, d] = dateStr.split("-");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const mIndex = parseInt(m, 10) - 1;
+  return `${parseInt(d, 10)}-${monthNames[mIndex] || m}-${y.slice(-2)}`;
+}
+
+async function getPostedStatus(targetDate) {
+  requireRedis();
+  await ensureRedisInitialized();
+  const today = getZonedTodayDate();
+  const dateToCheck = targetDate ? String(targetDate).trim() : today;
+
+  const hash = (await redis.hgetall(REDIS_POSTED_STATUS_KEY)) || {};
+  const lastPostedDate = hash.lastPostedDate ? String(hash.lastPostedDate).trim() : null;
+  const lastPostedTime = hash.lastPostedTime ? String(hash.lastPostedTime).trim() : null;
+  const lastPostedBy = hash.lastPostedBy ? String(hash.lastPostedBy).trim() : null;
+
+  let isPosted = false;
+  let dateMeta = null;
+
+  if (hash[dateToCheck]) {
+    try {
+      dateMeta = typeof hash[dateToCheck] === "string" ? JSON.parse(hash[dateToCheck]) : hash[dateToCheck];
+      isPosted = Boolean(dateMeta && (dateMeta.posted === true || dateMeta.posted === "true"));
+    } catch {
+      isPosted = hash[dateToCheck] === "true" || hash[dateToCheck] === true || hash[dateToCheck] === "1";
+    }
+  } else if (lastPostedDate && lastPostedDate === dateToCheck) {
+    isPosted = true;
+  }
+
+  return {
+    date: dateToCheck,
+    formattedDate: formatDisplayDate(dateToCheck),
+    today,
+    isPosted,
+    status: isPosted ? "POSTED" : "NOT_POSTED",
+    lastPostedDate,
+    lastPostedTime: dateMeta?.timestamp || (isPosted ? lastPostedTime : null),
+    lastPostedBy: dateMeta?.by || (isPosted ? lastPostedBy : null),
+  };
+}
+
+async function setPostedStatus({ date, posted = true, by = "PowerAutomate" } = {}) {
+  requireRedis();
+  await ensureRedisInitialized();
+  const today = getZonedTodayDate();
+  const targetDate = date ? String(date).trim() : today;
+  const now = new Date().toISOString();
+
+  if (posted && String(posted) !== "false") {
+    const meta = { posted: true, timestamp: now, by: by || "PowerAutomate" };
+    await redis.hset(REDIS_POSTED_STATUS_KEY, {
+      [targetDate]: JSON.stringify(meta),
+      lastPostedDate: targetDate,
+      lastPostedTime: now,
+      lastPostedBy: by || "PowerAutomate",
+    });
+  } else {
+    await redis.hdel(REDIS_POSTED_STATUS_KEY, targetDate);
+    const lastDate = await redis.hget(REDIS_POSTED_STATUS_KEY, "lastPostedDate");
+    if (lastDate === targetDate) {
+      await redis.hdel(REDIS_POSTED_STATUS_KEY, "lastPostedDate", "lastPostedTime", "lastPostedBy");
+    }
+  }
+
+  return getPostedStatus(targetDate);
+}
+
+async function resetPostedStatus(date) {
+  return setPostedStatus({ date, posted: false });
+}
+
 module.exports = {
   getOptions,
   addOption,
@@ -328,5 +426,10 @@ module.exports = {
   addHoliday,
   deleteHoliday,
   getDefaultTeam,
+  getPostedStatus,
+  setPostedStatus,
+  resetPostedStatus,
+  getZonedTodayDate,
+  formatDisplayDate,
   isRedisConfigured: Boolean(redis),
 };
