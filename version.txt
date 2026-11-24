@@ -1,3 +1,11 @@
+Commit: 62384d321208891ba0ba6e86f8b5ca16df23c715
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:45:34 2026 +0530
+Subject: ui: simplify Teams posted banner to concise date and time format
+- Update Teams posted banner text to concise 'Posted to Teams on <Date> at <Time>'.
+- Remove redundant 'Automated via Power Automate' label from banner.
+
+--------------------------------------------------------------------------------
 Commit: 2ac13283633e14e964791f7516424b762f6c1f1a
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:41:44 2026 +0530
