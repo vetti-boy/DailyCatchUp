@@ -1,4 +1,5 @@
 const { Redis } = require("@upstash/redis");
+const generateReport = require("./report");
 
 const REDIS_PREFIX = "dailycatchup";
 const REDIS_NAMES_KEY = `${REDIS_PREFIX}:options:names`;
@@ -664,7 +665,6 @@ async function getTodayStatusData(date) {
     if (!(k in rowObj)) rowObj[k] = v;
   }
 
-  const generateReport = require("./report");
   const reportOutput = generateReport([rowObj], options.projects || []);
 
   return {
