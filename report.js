@@ -29,11 +29,11 @@ function generateReport(rows, knownProjects = []) {
     }
 
     if (!todayRow) {
-        const emptyBody = `<div style="font-size:16px;font-weight:bold;text-decoration:underline;margin:0px 0px 4px 0px;padding:0px;display:block;">🟡 IP Team Daily Status ${displayDate}</div><p style="margin:4px 0px 0px 0px;padding:0px;">No tasks found for today.</p>`;
+        const headerDiv = `<div style="font-size:16px;font-weight:bold;text-decoration:underline;margin:0px 0px 8px 0px;padding:0px;display:block;">🟡 IP Team Daily Status ${displayDate}</div>`;
         return {
-            report: `🟡 IP Team Daily Status ${displayDate}\nNo tasks found for today.`,
-            htmlReport: emptyBody,
-            copyHtml: emptyBody
+            report: `🟡 IP Team Daily Status ${displayDate}\n\nNo tasks found for today.`,
+            htmlReport: `${headerDiv}<p style="margin:4px 0px 0px 0px;padding:0px;">No tasks found for today.</p>`,
+            copyHtml: `${headerDiv}<br/><p style="margin:4px 0px 0px 0px;padding:0px;">No tasks found for today.</p>`
         };
     }
 
@@ -65,10 +65,10 @@ function generateReport(rows, knownProjects = []) {
         return line.replace(/^[•\u2022\-\*]\s*/, '').trim();
     }
 
-    let report = `🟡 IP Team Daily Status ${displayDate}\n`;
-    const headerHtml = `<div style="font-size:16px;font-weight:bold;text-decoration:underline;margin:0px 0px 4px 0px;padding:0px;display:block;">🟡 IP Team Daily Status ${displayDate}</div>`;
+    let report = `🟡 IP Team Daily Status ${displayDate}\n\n`;
+    const headerHtml = `<div style="font-size:16px;font-weight:bold;text-decoration:underline;margin:0px 0px 8px 0px;padding:0px;display:block;">🟡 IP Team Daily Status ${displayDate}</div>`;
     let htmlReport = headerHtml;
-    let copyHtml = headerHtml;
+    let copyHtml = headerHtml + "<br/>";
 
     const entries = Object.entries(todayRow);
 
