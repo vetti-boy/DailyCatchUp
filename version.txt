@@ -1,3 +1,13 @@
+Commit: 669977028dfcf703b07b19ce8a60ff69fbef9099
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:17:48 2026 +0530
+Subject: feat: preserve Google Sheet column order for CatchUp report and future month sheets
+- Persist canonical team name order in Redis (dailycatchup:names:order) matching Google Sheet column headers.
+- Ensure status reports (plain text and rich HTML) order members exactly as ordered in the sheet.
+- Update ensureSheetExists to generate new month tabs with the exact same header order and '__PowerAppsId__'.
+- Automatically generate weekday dates for new month tabs based on sheetName target month.
+
+--------------------------------------------------------------------------------
 Commit: 09bbf2fd69a8bb5b355f9a1ef6a13b88c0b3560f
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 12:23:54 2026 +0530
@@ -31,6 +41,16 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
 - Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
 - Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
+Commit: 669977028dfcf703b07b19ce8a60ff69fbef9099
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:17:48 2026 +0530
+Subject: feat: preserve Google Sheet column order for CatchUp report and future month sheets
+- Persist canonical team name order in Redis (dailycatchup:names:order) matching Google Sheet column headers.
+- Ensure status reports (plain text and rich HTML) order members exactly as ordered in the sheet.
+- Update ensureSheetExists to generate new month tabs with the exact same header order and '__PowerAppsId__'.
+- Automatically generate weekday dates for new month tabs based on sheetName target month.
 
 --------------------------------------------------------------------------------
 Commit: 09bbf2fd69a8bb5b355f9a1ef6a13b88c0b3560f
