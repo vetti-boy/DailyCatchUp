@@ -1,3 +1,10 @@
+Commit: 4fd452e825a0735398d5ea2f357597148bf560e2
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:32:37 2026 +0530
+Subject: refactor: import generateReport at top level in storage.js
+- Ensure static NFT bundler traces report.js as a top level dependency.
+
+--------------------------------------------------------------------------------
 Commit: c7bf17bc93bf656a47dfd665a5e3ec31d87e0b57
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:27:35 2026 +0530
@@ -59,6 +66,13 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
 - Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
 - Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
+Commit: 4fd452e825a0735398d5ea2f357597148bf560e2
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:32:37 2026 +0530
+Subject: refactor: import generateReport at top level in storage.js
+- Ensure static NFT bundler traces report.js as a top level dependency.
 
 --------------------------------------------------------------------------------
 Commit: c7bf17bc93bf656a47dfd665a5e3ec31d87e0b57
