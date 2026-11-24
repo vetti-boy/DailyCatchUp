@@ -1,3 +1,11 @@
+Commit: c7bf17bc93bf656a47dfd665a5e3ec31d87e0b57
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:27:35 2026 +0530
+Subject: style: add line break space between status header and first person name
+- Add clean line break space after title header in both HTML (copyHtml) and plain text report.
+- Improves visual separation before the first person name in Microsoft Teams.
+
+--------------------------------------------------------------------------------
 Commit: c92b282e4431e21b069dcfc786a3bf0047bf3175
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:25:37 2026 +0530
@@ -51,6 +59,14 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
 - Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
 - Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
+Commit: c7bf17bc93bf656a47dfd665a5e3ec31d87e0b57
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:27:35 2026 +0530
+Subject: style: add line break space between status header and first person name
+- Add clean line break space after title header in both HTML (copyHtml) and plain text report.
+- Improves visual separation before the first person name in Microsoft Teams.
 
 --------------------------------------------------------------------------------
 Commit: c92b282e4431e21b069dcfc786a3bf0047bf3175
