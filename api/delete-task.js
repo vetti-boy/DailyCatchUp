@@ -71,6 +71,13 @@ module.exports = async (req, res) => {
       requestBody: { values: [[""]] },
     });
 
+    try {
+      const { deleteTodayEntry } = require("../storage");
+      await deleteTodayEntry(cleanName);
+    } catch (redisErr) {
+      console.warn("Could not delete task from Redis:", redisErr.message);
+    }
+
     return res.status(200).json({ success: true, message: `Cleared entry for ${cleanName}.` });
   } catch (err) {
     console.error("Error deleting entry:", err);

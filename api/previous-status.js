@@ -266,6 +266,17 @@ module.exports = async (req, res) => {
         requestBody: { values: [[statusByAction[action]]] },
       });
 
+      try {
+        const { setTodayEntry, deleteTodayEntry } = require("../storage");
+        if (action === "unmark") {
+          await deleteTodayEntry(name);
+        } else {
+          await setTodayEntry(name, statusByAction[action]);
+        }
+      } catch (redisErr) {
+        console.warn("Could not sync leave/status to Redis:", redisErr.message);
+      }
+
       const messages = {
         leave: `Marked ${name} as On Leave.`,
         "first-half": `Marked ${name} as First Half Leave.`,

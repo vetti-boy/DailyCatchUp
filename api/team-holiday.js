@@ -133,6 +133,19 @@ module.exports = async (req, res) => {
       });
     }
 
+    try {
+      const { setTodayEntry, deleteTodayEntry } = require("../storage");
+      for (const person of targetPeople) {
+        if (action === "unmark") {
+          await deleteTodayEntry(person.name);
+        } else {
+          await setTodayEntry(person.name, "Holiday");
+        }
+      }
+    } catch (redisErr) {
+      console.warn("Could not sync team holiday to Redis:", redisErr.message);
+    }
+
     const teamLabel = team === "BOTH" || team === "ALL" ? "Both Locations (CBE & BLR)" : `${team} Team`;
     const message = action === "unmark"
       ? `Holiday status removed for ${affectedNames.length} member(s) of ${teamLabel}.`

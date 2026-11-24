@@ -51,6 +51,7 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
   * **`api/team-holiday.js`**: Batch marks or unmarks "Holiday" status for CBE, BLR, or Both teams in Google Sheets.
   * **`api/holidays.js` & `api/today-holiday-feed.js`**: Manages annual holiday schedules.
   * **`api/posted-status.js` (routes `/api/posted-status` & `/api/today-posted-feed`)**: Real-time Redis-backed Teams CatchUp posted status tracker and RSS feed for high-speed Power Automate execution (eliminates slow Google Sheets status queries).
+  * **`api/today-catchup.js` (routes `/api/today-not-filled-feed`, `/api/today-catchup-feed`, `/api/today-catchup`)**: Ultra-fast endpoints for Power Automate and UI backed by Redis today cache (`dailycatchup:today:<date>`). Replaces slow Google Sheets scanning for team member status and formatted CatchUp report.
 
 ### 3. Report Engine (`report.js`)
 * Processes raw rows retrieved from Google Sheets.
@@ -137,6 +138,7 @@ User selects Name ➔ Clicks "Use Previous Day Status"
 | [`storage.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/storage.js) | Storage abstraction for names, projects, emails, and holidays with Upstash Redis REST support. |
 | [`api/previous-status.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/api/previous-status.js) | Handles Previous Day status lookup and Leave/Permission state updates. |
 | [`api/posted-status.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/api/posted-status.js) | Fast Redis-backed status tracking & RSS feed for Power Automate check & update. |
+| [`api/today-catchup.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/api/today-catchup.js) | Ultra-fast Redis-backed feeds for Power Automate: today-not-filled-feed & today-catchup-feed. |
 | [`public/previous-status-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/previous-status-ui.js) | Front-end controller for status buttons (including On Permission ⏱️), modals, and auto-fill. |
 | [`public/holiday-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/holiday-ui.js) | Holiday management UI controller with custom Add/Edit modals and date pickers. |
 | [`public/people-email-ui.js`](file:///d:/Manoj/Personal%20Projects/IPDailyCatchUp/DailyCatchUp/public/people-email-ui.js) | Person email mapping input controller for Manage Names. |

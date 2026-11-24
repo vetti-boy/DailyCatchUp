@@ -21,6 +21,9 @@ app.all("/api/submit-task", require("./api/submit-task"));
 app.all("/api/delete-task", require("./api/delete-task"));
 app.all("/api/sheet-url", require("./api/sheet-url"));
 app.all("/api/team-holiday", require("./api/team-holiday"));
+app.all("/api/today-not-filled-feed", require("./api/today-catchup"));
+app.all("/api/today-catchup-feed", require("./api/today-catchup"));
+app.all("/api/today-catchup", require("./api/today-catchup"));
 
 // Static app route fallback
 app.use((req, res, next) => {

@@ -126,6 +126,13 @@ module.exports = async (req, res) => {
       requestBody: { values: [[finalCellText]] },
     });
 
+    try {
+      const { setTodayEntry } = require("../storage");
+      await setTodayEntry(cleanName, finalCellText);
+    } catch (redisErr) {
+      console.warn("Could not sync task to Redis:", redisErr.message);
+    }
+
     return res.status(200).json({ success: true, message: "Tasks saved successfully!" });
   } catch (err) {
     console.error("Error saving task:", err);

@@ -415,6 +415,146 @@ async function resetPostedStatus(date) {
   return setPostedStatus({ date, posted: false });
 }
 
+function todayCatchUpKey(date) {
+  const d = date ? String(date).trim() : getZonedTodayDate();
+  return `${REDIS_PREFIX}:today:${d}`;
+}
+
+async function setTodayEntry(name, text, date) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) return;
+  requireRedis();
+  await ensureRedisInitialized();
+  const key = todayCatchUpKey(date);
+  await redis.hset(key, { [cleanName]: String(text || "").trim() });
+  await redis.expire(key, 604800); // 7-day TTL auto-cleanup
+}
+
+async function deleteTodayEntry(name, date) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) return;
+  requireRedis();
+  await ensureRedisInitialized();
+  const key = todayCatchUpKey(date);
+  await redis.hdel(key, cleanName);
+}
+
+async function syncTodayFromSheet(date) {
+  try {
+    const { sheets, getCurrentSheetName, ensureSheetExists, getValidTodayKeys } = require("./sheet-helper");
+    const spreadsheetId = process.env.SPREADSHEET_ID;
+    if (!spreadsheetId) return {};
+
+    const targetDate = date ? String(date).trim() : getZonedTodayDate();
+    const sheetName = getCurrentSheetName(targetDate);
+    await ensureSheetExists(spreadsheetId, sheetName);
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A1:ZZ1000`,
+    });
+
+    const rowsData = response.data.values || [];
+    if (rowsData.length === 0) return {};
+
+    const headers = rowsData[0] || [];
+    const validKeys = getValidTodayKeys(targetDate);
+    let todayRow = null;
+
+    for (let i = 1; i < rowsData.length; i++) {
+      const cellDate = String(rowsData[i][0] || "").trim().toLowerCase();
+      if (validKeys.includes(cellDate)) {
+        todayRow = rowsData[i];
+        break;
+      }
+    }
+
+    if (!todayRow) return {};
+
+    const entries = {};
+    headers.forEach((h, idx) => {
+      if (idx === 0 || !h) return;
+      const name = String(h).trim();
+      if (!name || name === "__PowerAppsId__") return;
+      const val = String(todayRow[idx] || "").trim();
+      if (val) entries[name] = val;
+    });
+
+    const key = todayCatchUpKey(targetDate);
+    if (Object.keys(entries).length > 0) {
+      await redis.hset(key, entries);
+    }
+    await redis.hset(key, { _synced: "true" });
+    await redis.expire(key, 604800);
+
+    return entries;
+  } catch (err) {
+    console.error("Error syncing today data from sheet:", err);
+    return {};
+  }
+}
+
+async function getTodayEntries(date) {
+  requireRedis();
+  await ensureRedisInitialized();
+  const targetDate = date ? String(date).trim() : getZonedTodayDate();
+  const key = todayCatchUpKey(targetDate);
+  let entries = (await redis.hgetall(key)) || {};
+
+  // If Redis is cold / empty for today, sync from Google Sheet
+  if (Object.keys(entries).length === 0) {
+    entries = await syncTodayFromSheet(targetDate);
+  }
+
+  const clean = { ...entries };
+  delete clean._synced;
+  return clean;
+}
+
+async function getTodayStatusData(date) {
+  const targetDate = date ? String(date).trim() : getZonedTodayDate();
+  const [entries, people, options] = await Promise.all([
+    getTodayEntries(targetDate),
+    getPeople(),
+    getOptions(),
+  ]);
+
+  const notFilled = [];
+  const filled = [];
+
+  for (const person of people) {
+    const task = String(entries[person.name] || "").trim();
+    if (!task) {
+      notFilled.push(person);
+    } else {
+      filled.push({ ...person, task });
+    }
+  }
+
+  const allFilled = notFilled.length === 0;
+
+  // Build row object for report.js
+  const displayDate = formatDisplayDate(targetDate);
+  const rowObj = { Date: displayDate, ...entries };
+  const generateReport = require("./report");
+  const reportOutput = generateReport([rowObj], options.projects || []);
+
+  return {
+    date: targetDate,
+    displayDate,
+    allFilled,
+    totalMembers: people.length,
+    filledCount: filled.length,
+    notFilledCount: notFilled.length,
+    notFilled,
+    filled,
+    entries,
+    report: reportOutput.report,
+    htmlReport: reportOutput.htmlReport,
+    copyHtml: reportOutput.copyHtml,
+  };
+}
+
 module.exports = {
   getOptions,
   addOption,
@@ -431,5 +571,11 @@ module.exports = {
   resetPostedStatus,
   getZonedTodayDate,
   formatDisplayDate,
+  todayCatchUpKey,
+  setTodayEntry,
+  deleteTodayEntry,
+  getTodayEntries,
+  syncTodayFromSheet,
+  getTodayStatusData,
   isRedisConfigured: Boolean(redis),
 };
