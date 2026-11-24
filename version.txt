@@ -1,3 +1,10 @@
+Commit: c571a46e1069df1fc4b22c3c6f2a74c2bc0ff65b
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:35:22 2026 +0530
+Subject: docs: document canonical sheet ordering and departed member exclusion in insights
+- Document canonical column order preservation, future month sheet creation, and Teams HTML formatting in PROJECT_INSIGHTS.md.
+
+--------------------------------------------------------------------------------
 Commit: 4fd452e825a0735398d5ea2f357597148bf560e2
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:32:37 2026 +0530
@@ -66,6 +73,13 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
 - Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
 - Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
+Commit: c571a46e1069df1fc4b22c3c6f2a74c2bc0ff65b
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:35:22 2026 +0530
+Subject: docs: document canonical sheet ordering and departed member exclusion in insights
+- Document canonical column order preservation, future month sheet creation, and Teams HTML formatting in PROJECT_INSIGHTS.md.
 
 --------------------------------------------------------------------------------
 Commit: 4fd452e825a0735398d5ea2f357597148bf560e2
