@@ -61,11 +61,16 @@ module.exports = async (req, res) => {
 
     // 2. RSS Feed for formatted Catch-Up text ready for Teams
     if (isCatchupFeed) {
+      const isPlainTextRequested = req.query?.format === "raw" || req.query?.format === "text";
+      const formattedContent = isPlainTextRequested
+        ? data.report
+        : (data.copyHtml || data.report.replace(/\n/g, "<br/>\n"));
+
       const item = data.report
         ? `
     <item>
       <title>${escapeXml("🟡 IP Team Daily Status " + data.displayDate)}</title>
-      <description>${escapeXml(data.report)}</description>
+      <description>${escapeXml(formattedContent)}</description>
       <link>https://daily-catch-up.vercel.app/</link>
       <pubDate>${now}</pubDate>
       <guid isPermaLink="false">dailycatchup-report-${escapeXml(data.date)}</guid>
