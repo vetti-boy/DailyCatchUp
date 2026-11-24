@@ -76,12 +76,11 @@
         </div>
 
         <!-- TEAMS POSTED STATUS BANNER (READ-ONLY) -->
-        <div id="teams-status-banner" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div id="teams-status-banner" style="display: flex; align-items: center; justify-content: flex-start; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <span id="teams-status-badge" style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border);">Checking...</span>
-                <span id="teams-status-text" style="font-size: 0.85rem; color: var(--muted);">Checking Power Automate post status in Redis...</span>
+                <span id="teams-status-text" style="font-size: 0.85rem; color: var(--muted);">Checking status...</span>
             </div>
-            <span style="font-size: 0.75rem; color: var(--muted); opacity: 0.8;">Automated via Power Automate</span>
         </div>
 
         <div id="report-body">Loading status...</div>
@@ -803,13 +802,15 @@
                     timeStr = ` at ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
                 } catch {}
             }
-            text.innerHTML = `Power Automate posted for today (${data.formattedDate || data.date})${timeStr}`;
+            const dateStr = data.formattedDate || data.date || "today";
+            text.innerHTML = `Posted to Teams on ${dateStr}${timeStr}`;
         } else {
             badge.innerHTML = "⏳ PENDING POST";
             badge.style.background = "rgba(255, 193, 7, 0.12)";
             badge.style.color = "#ffc107";
             badge.style.borderColor = "rgba(255, 193, 7, 0.35)";
-            text.innerHTML = `Daily catchup for today (${data?.formattedDate || data?.date || "today"}) has not been posted by Power Automate yet.`;
+            const dateStr = data?.formattedDate || data?.date || "today";
+            text.innerHTML = `Not posted to Teams yet for ${dateStr}.`;
         }
     }
 
