@@ -82,45 +82,69 @@ async function getOrderedNames() {
   requireRedis();
   await ensureRedisInitialized();
 
-  let ordered = await redis.get(REDIS_NAMES_ORDER_KEY);
-  if (Array.isArray(ordered) && ordered.length > 0) {
-    return ordered;
-  }
-  if (typeof ordered === "string") {
+  const [orderedRaw, activeNames] = await Promise.all([
+    redis.get(REDIS_NAMES_ORDER_KEY),
+    redis.smembers(REDIS_NAMES_KEY),
+  ]);
+
+  const activeSet = new Set((activeNames || []).map((n) => n.toLowerCase()));
+
+  let ordered = null;
+  if (Array.isArray(orderedRaw) && orderedRaw.length > 0) {
+    ordered = orderedRaw;
+  } else if (typeof orderedRaw === "string") {
     try {
-      const parsed = JSON.parse(ordered);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      const parsed = JSON.parse(orderedRaw);
+      if (Array.isArray(parsed) && parsed.length > 0) ordered = parsed;
     } catch {}
   }
 
   // Fallback: Read from the current sheet's header row
-  try {
-    const { sheets, getCurrentSheetName } = require("./sheet-helper");
-    const spreadsheetId = process.env.SPREADSHEET_ID;
-    if (spreadsheetId) {
-      const sheetName = getCurrentSheetName();
-      const res = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: `${sheetName}!1:1`,
-      });
-      const headerRow = res.data.values?.[0] || [];
-      const sheetNames = headerRow
-        .slice(1)
-        .map((h) => String(h || "").trim())
-        .filter((h) => h && h !== "__PowerAppsId__");
+  if (!ordered) {
+    try {
+      const { sheets, getCurrentSheetName } = require("./sheet-helper");
+      const spreadsheetId = process.env.SPREADSHEET_ID;
+      if (spreadsheetId) {
+        const sheetName = getCurrentSheetName();
+        const res = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!1:1`,
+        });
+        const headerRow = res.data.values?.[0] || [];
+        const sheetNames = headerRow
+          .slice(1)
+          .map((h) => String(h || "").trim())
+          .filter((h) => h && h !== "__PowerAppsId__");
 
-      if (sheetNames.length > 0) {
-        await setOrderedNames(sheetNames);
-        return sheetNames;
+        if (sheetNames.length > 0) {
+          ordered = sheetNames;
+        }
       }
+    } catch (err) {
+      console.warn("Could not read sheet headers for ordered names:", err.message);
     }
-  } catch (err) {
-    console.warn("Could not read sheet headers for ordered names:", err.message);
   }
 
-  // Fallback: getOptions().names
-  const opts = await getOptions();
-  return opts.names || [];
+  if (!ordered) {
+    ordered = sortValues(activeNames || []);
+  }
+
+  // Filter out any people who are no longer active in the app (e.g. left organisation)
+  const activeOrdered = ordered.filter((n) => activeSet.has(n.toLowerCase()));
+
+  // Append any newly added active names not yet in the ordered list
+  for (const name of activeNames || []) {
+    if (!activeOrdered.some((n) => n.toLowerCase() === name.toLowerCase())) {
+      activeOrdered.push(name);
+    }
+  }
+
+  // If order changed, update Redis
+  if (JSON.stringify(activeOrdered) !== JSON.stringify(orderedRaw)) {
+    await setOrderedNames(activeOrdered);
+  }
+
+  return activeOrdered;
 }
 
 async function setOrderedNames(namesList) {
@@ -232,6 +256,15 @@ async function upsertPerson(name, email, team) {
     redis.hset(REDIS_PEOPLE_KEY, { [person.name]: person.email }),
     redis.hset(REDIS_PEOPLE_TEAMS_KEY, { [person.name]: person.team }),
   ]);
+  try {
+    const ordered = await getOrderedNames();
+    if (!ordered.some((n) => n.toLowerCase() === person.name.toLowerCase())) {
+      ordered.push(person.name);
+      await setOrderedNames(ordered);
+    }
+  } catch (e) {
+    console.warn("Could not append to ordered names:", e.message);
+  }
   return getPeople();
 }
 
@@ -245,6 +278,13 @@ async function deletePerson(name) {
     redis.hdel(REDIS_PEOPLE_KEY, cleanName),
     redis.hdel(REDIS_PEOPLE_TEAMS_KEY, cleanName),
   ]);
+  try {
+    const ordered = await getOrderedNames();
+    const filtered = ordered.filter((n) => n.toLowerCase() !== cleanName.toLowerCase());
+    await setOrderedNames(filtered);
+  } catch (e) {
+    console.warn("Could not remove from ordered names:", e.message);
+  }
   return getPeople();
 }
 

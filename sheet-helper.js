@@ -1,6 +1,5 @@
 const path = require("path");
 const { google } = require("googleapis");
-const { getOptions } = require("./storage");
 
 const TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Kolkata";
 
