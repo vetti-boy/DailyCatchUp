@@ -1,3 +1,13 @@
+Commit: c92b282e4431e21b069dcfc786a3bf0047bf3175
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:25:37 2026 +0530
+Subject: feat: automatically exclude deleted members from future month sheets while preserving historical sheets
+- When a person is deleted from the app (leaves organisation), automatically remove them from canonical order.
+- Filter getOrderedNames strictly against active team members in Redis.
+- Ensure new month sheets created by ensureSheetExists only include active team members.
+- Historical Google Sheets tabs (past months) remain completely intact.
+
+--------------------------------------------------------------------------------
 Commit: 669977028dfcf703b07b19ce8a60ff69fbef9099
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:17:48 2026 +0530
@@ -41,6 +51,16 @@ Subject: fix: restrict hyphens when adding new project names and sanitize existi
 - Validate and reject hyphens with HTTP 400 in /api/options and storage.addOption.
 - Sanitize existing hyphenated project names in Redis to prevent downstream report parsing issues.
 - Defensively sanitize project names in api/submit-task.js.
+
+--------------------------------------------------------------------------------
+Commit: c92b282e4431e21b069dcfc786a3bf0047bf3175
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:25:37 2026 +0530
+Subject: feat: automatically exclude deleted members from future month sheets while preserving historical sheets
+- When a person is deleted from the app (leaves organisation), automatically remove them from canonical order.
+- Filter getOrderedNames strictly against active team members in Redis.
+- Ensure new month sheets created by ensureSheetExists only include active team members.
+- Historical Google Sheets tabs (past months) remain completely intact.
 
 --------------------------------------------------------------------------------
 Commit: 669977028dfcf703b07b19ce8a60ff69fbef9099
