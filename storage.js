@@ -97,7 +97,7 @@ async function getOrderedNames() {
     try {
       const parsed = JSON.parse(orderedRaw);
       if (Array.isArray(parsed) && parsed.length > 0) ordered = parsed;
-    } catch {}
+    } catch { }
   }
 
   // Fallback: Read from the current sheet's header row
@@ -335,7 +335,7 @@ function normalizeHoliday(raw, fieldDate) {
     try {
       const parsed = JSON.parse(value);
       if (parsed && typeof parsed === "object") return normalizeHoliday(parsed, fieldDate);
-    } catch {}
+    } catch { }
     return { date: String(fieldDate), name: value };
   }
   return null;

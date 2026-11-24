@@ -54,15 +54,17 @@ The application uses **Google Sheets** as a spreadsheet database back-end and su
   * **`api/today-catchup.js` (routes `/api/today-not-filled-feed`, `/api/today-catchup-feed`, `/api/today-catchup`)**: Ultra-fast endpoints for Power Automate and UI backed by Redis today cache (`dailycatchup:today:<date>`). Replaces slow Google Sheets scanning for team member status and formatted CatchUp report.
 
 ### 3. Report Engine (`report.js`)
-* Processes raw rows retrieved from Google Sheets.
+* Processes raw rows retrieved from Google Sheets or Redis today cache.
 * Groups task entries by project headings (e.g. `Project Name - Task Details`).
 * Generates dual output formats:
-  1. **Plain Text:** Formatted with bullet points for easy copying into Microsoft Teams.
-  2. **HTML:** Styled markup with action buttons (e.g., individual entry deletion).
+  1. **Plain Text:** Formatted with bullet points and blank line separator after title header for Microsoft Teams.
+  2. **HTML / Copy HTML:** Styled markup with `<p>`, `<strong><u>Name:</u></strong>`, indented project headers, bullet lists, and line break spacing for direct Microsoft Teams rendering.
 * Handles special status strings: `"On Leave"`, `"First Half Leave"`, `"On Permission"`, `"On Duty"`, `"Holiday"`, and `"CatchUp Not Filled Yet"`.
+* Guarantees names appear in the exact canonical column order of the Google Sheet.
 
 ### 4. Storage & Persistence (`storage.js`)
-* Stores dynamic configuration data (team member names, projects, email mappings, holidays).
+* Stores dynamic configuration data (team member names, projects, email mappings, holidays, posted status).
+* **Canonical Member Order (`dailycatchup:names:order`):** Keeps team names strictly in the order of the Google Sheet columns. Automatically appends new members and excludes departed/deleted members when generating future month sheets.
 * **Vercel / Production:** Uses **Upstash Redis REST API** (supports both standard `KV_REST_API_*` and Upstash `UPSTASH_REDIS_REST_KV_REST_API_*` env vars).
 * **Redis Persistence:** Directly queries Upstash Redis REST API without local data.json dependency.
 
