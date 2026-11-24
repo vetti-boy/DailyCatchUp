@@ -471,6 +471,14 @@ async function getPostedStatus(targetDate) {
   const lastPostedTime = hash.lastPostedTime ? String(hash.lastPostedTime).trim() : null;
   const lastPostedBy = hash.lastPostedBy ? String(hash.lastPostedBy).trim() : null;
 
+  // Auto-prune previous day date keys so Redis only keeps current day's status
+  const oldDateKeys = Object.keys(hash).filter(
+    (key) => /^\d{4}-\d{2}-\d{2}$/.test(key) && key !== today && key !== dateToCheck
+  );
+  if (oldDateKeys.length > 0) {
+    redis.hdel(REDIS_POSTED_STATUS_KEY, ...oldDateKeys).catch(() => {});
+  }
+
   let isPosted = false;
   let dateMeta = null;
 
@@ -512,6 +520,19 @@ async function setPostedStatus({ date, posted = true, by = "PowerAutomate" } = {
       lastPostedTime: now,
       lastPostedBy: by || "PowerAutomate",
     });
+
+    // Auto-prune previous day date keys so only the current active date is retained in Redis
+    try {
+      const allFields = (await redis.hgetall(REDIS_POSTED_STATUS_KEY)) || {};
+      const oldDateKeys = Object.keys(allFields).filter(
+        (key) => /^\d{4}-\d{2}-\d{2}$/.test(key) && key !== targetDate
+      );
+      if (oldDateKeys.length > 0) {
+        await redis.hdel(REDIS_POSTED_STATUS_KEY, ...oldDateKeys);
+      }
+    } catch (pruneErr) {
+      console.warn("Auto-pruning old posted status dates failed:", pruneErr?.message);
+    }
   } else {
     await redis.hdel(REDIS_POSTED_STATUS_KEY, targetDate);
     const lastDate = await redis.hget(REDIS_POSTED_STATUS_KEY, "lastPostedDate");

@@ -129,6 +129,11 @@ User selects Name ➔ Clicks "Use Previous Day Status"
    * `service_account.json`: Service account credentials file (for local development).
    * `UPSTASH_REDIS_REST_KV_REST_API_URL` & `UPSTASH_REDIS_REST_KV_REST_API_TOKEN`: Upstash Redis credentials for persistent cloud storage on Vercel and locally.
 
+5. **Redis Cache Lifecycle & Auto-Pruning:**
+   * Google Sheets serves as the permanent historical record for all past dates and months.
+   * Redis is used purely as an ultra-fast in-memory cache for today's catch-up and Teams posting status.
+   * `dailycatchup:posted-status` automatically prunes previous day date fields so the Redis hash never accumulates obsolete historical keys.
+
 ---
 
 ## 🛠️ Summary of Key Files
