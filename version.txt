@@ -1,3 +1,11 @@
+Commit: 2ac13283633e14e964791f7516424b762f6c1f1a
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Tue Nov 24 13:41:44 2026 +0530
+Subject: feat: auto-prune previous day date keys from Redis posted-status hash
+- Automatically delete old date fields from dailycatchup:posted-status hash in storage.js.
+- Keep Google Sheets as permanent historical log while keeping Redis cache clean.
+
+--------------------------------------------------------------------------------
 Commit: c571a46e1069df1fc4b22c3c6f2a74c2bc0ff65b
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:35:22 2026 +0530
