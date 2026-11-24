@@ -115,6 +115,23 @@ function generateMonthDates(dateInput) {
   return dateRows;
 }
 
+function getTargetDateFromSheetName(sheetName) {
+  if (typeof sheetName === "string") {
+    const parts = sheetName.split("-");
+    if (parts.length === 2) {
+      const monthStr = parts[0].toLowerCase();
+      const yr = parseInt(parts[1], 10);
+      const fullYr = yr < 100 ? 2000 + yr : yr;
+      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const mIdx = months.indexOf(monthStr);
+      if (mIdx >= 0) {
+        return new Date(fullYr, mIdx, 1);
+      }
+    }
+  }
+  return new Date();
+}
+
 async function ensureSheetExists(spreadsheetId, sheetName) {
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
   const sheetExists = spreadsheet.data.sheets.some(
@@ -131,9 +148,11 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
       },
     });
 
-    const persistentData = await getOptions();
-    const headers = ["Date", ...(persistentData.names || [])];
-    const dates = generateMonthDates();
+    const { getOrderedNames } = require("./storage");
+    const orderedNames = await getOrderedNames();
+    const headers = ["Date", ...orderedNames, "__PowerAppsId__"];
+    const targetDate = getTargetDateFromSheetName(sheetName);
+    const dates = generateMonthDates(targetDate);
     const fullRows = [headers];
 
     dates.forEach((dateArr) => {
@@ -147,7 +166,7 @@ async function ensureSheetExists(spreadsheetId, sheetName) {
       requestBody: { values: fullRows },
     });
 
-    console.log(`✅ Created tab '${sheetName}' with headers and dates.`);
+    console.log(`✅ Created tab '${sheetName}' with headers in canonical order and dates.`);
   }
 }
 
@@ -159,4 +178,5 @@ module.exports = {
   getValidTodayKeys,
   generateMonthDates,
   ensureSheetExists,
+  getTargetDateFromSheetName,
 };

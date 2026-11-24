@@ -6,6 +6,7 @@ const REDIS_PROJECTS_KEY = `${REDIS_PREFIX}:options:projects`;
 const REDIS_PEOPLE_KEY = `${REDIS_PREFIX}:people`;
 const REDIS_PEOPLE_TEAMS_KEY = `${REDIS_PREFIX}:people:teams`;
 const REDIS_POSTED_STATUS_KEY = `${REDIS_PREFIX}:posted-status`;
+const REDIS_NAMES_ORDER_KEY = `${REDIS_PREFIX}:names:order`;
 const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Kolkata";
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -77,6 +78,58 @@ async function getOptions() {
   return sortOptions({ names: names || [], projects: projects || [] });
 }
 
+async function getOrderedNames() {
+  requireRedis();
+  await ensureRedisInitialized();
+
+  let ordered = await redis.get(REDIS_NAMES_ORDER_KEY);
+  if (Array.isArray(ordered) && ordered.length > 0) {
+    return ordered;
+  }
+  if (typeof ordered === "string") {
+    try {
+      const parsed = JSON.parse(ordered);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+  }
+
+  // Fallback: Read from the current sheet's header row
+  try {
+    const { sheets, getCurrentSheetName } = require("./sheet-helper");
+    const spreadsheetId = process.env.SPREADSHEET_ID;
+    if (spreadsheetId) {
+      const sheetName = getCurrentSheetName();
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!1:1`,
+      });
+      const headerRow = res.data.values?.[0] || [];
+      const sheetNames = headerRow
+        .slice(1)
+        .map((h) => String(h || "").trim())
+        .filter((h) => h && h !== "__PowerAppsId__");
+
+      if (sheetNames.length > 0) {
+        await setOrderedNames(sheetNames);
+        return sheetNames;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not read sheet headers for ordered names:", err.message);
+  }
+
+  // Fallback: getOptions().names
+  const opts = await getOptions();
+  return opts.names || [];
+}
+
+async function setOrderedNames(namesList) {
+  requireRedis();
+  if (!Array.isArray(namesList) || namesList.length === 0) return;
+  const clean = [...new Set(namesList.map((n) => String(n).trim()).filter(Boolean))];
+  await redis.set(REDIS_NAMES_ORDER_KEY, JSON.stringify(clean));
+}
+
 async function addOption(type, value) {
   const normalized = String(value || "").trim();
   if (type === "project" && HYPHEN_REGEX.test(normalized)) {
@@ -88,6 +141,17 @@ async function addOption(type, value) {
   requireRedis();
   await ensureRedisInitialized();
   await redis.sadd(type === "name" ? REDIS_NAMES_KEY : REDIS_PROJECTS_KEY, normalized);
+  if (type === "name") {
+    try {
+      const ordered = await getOrderedNames();
+      if (!ordered.some((n) => n.toLowerCase() === normalized.toLowerCase())) {
+        ordered.push(normalized);
+        await setOrderedNames(ordered);
+      }
+    } catch (e) {
+      console.warn("Could not append to ordered names:", e.message);
+    }
+  }
   return getOptions();
 }
 
@@ -101,6 +165,13 @@ async function deleteOption(type, value) {
       redis.hdel(REDIS_PEOPLE_KEY, normalized),
       redis.hdel(REDIS_PEOPLE_TEAMS_KEY, normalized),
     ]);
+    try {
+      const ordered = await getOrderedNames();
+      const filtered = ordered.filter((n) => n.toLowerCase() !== normalized.toLowerCase());
+      await setOrderedNames(filtered);
+    } catch (e) {
+      console.warn("Could not remove from ordered names:", e.message);
+    }
   }
   return getOptions();
 }
@@ -513,11 +584,21 @@ async function getTodayEntries(date) {
 
 async function getTodayStatusData(date) {
   const targetDate = date ? String(date).trim() : getZonedTodayDate();
-  const [entries, people, options] = await Promise.all([
+  const [entries, people, options, orderedNames] = await Promise.all([
     getTodayEntries(targetDate),
     getPeople(),
     getOptions(),
+    getOrderedNames(),
   ]);
+
+  const nameIndexMap = new Map(orderedNames.map((n, i) => [n.toLowerCase(), i]));
+
+  // Sort people array according to canonical sheet column order
+  people.sort((a, b) => {
+    const idxA = nameIndexMap.has(a.name.toLowerCase()) ? nameIndexMap.get(a.name.toLowerCase()) : 999;
+    const idxB = nameIndexMap.has(b.name.toLowerCase()) ? nameIndexMap.get(b.name.toLowerCase()) : 999;
+    return idxA - idxB;
+  });
 
   const notFilled = [];
   const filled = [];
@@ -533,9 +614,16 @@ async function getTodayStatusData(date) {
 
   const allFilled = notFilled.length === 0;
 
-  // Build row object for report.js
+  // Build row object for report.js in canonical sheet column order
   const displayDate = formatDisplayDate(targetDate);
-  const rowObj = { Date: displayDate, ...entries };
+  const rowObj = { Date: displayDate };
+  for (const name of orderedNames) {
+    rowObj[name] = entries[name] || "";
+  }
+  for (const [k, v] of Object.entries(entries)) {
+    if (!(k in rowObj)) rowObj[k] = v;
+  }
+
   const generateReport = require("./report");
   const reportOutput = generateReport([rowObj], options.projects || []);
 
@@ -577,5 +665,7 @@ module.exports = {
   getTodayEntries,
   syncTodayFromSheet,
   getTodayStatusData,
+  getOrderedNames,
+  setOrderedNames,
   isRedisConfigured: Boolean(redis),
 };
