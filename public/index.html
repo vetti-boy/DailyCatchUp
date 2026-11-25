@@ -72,10 +72,7 @@
     <div id="tab-status" class="card tab-content" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.05">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
             <h3 style="color: var(--accent);">Today's Status Summary</h3>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-secondary" id="sync-btn" onclick="syncFromSheet()" title="Sync and refresh latest entries directly from Google Sheets">🔄 Sync from Sheet</button>
-                <button class="btn btn-primary" id="copy-btn" onclick="copyReport()">📋 Copy Report</button>
-            </div>
+            <button class="btn btn-primary" id="copy-btn" onclick="copyReport()">📋 Copy Report</button>
         </div>
 
         <!-- TEAMS POSTED STATUS BANNER (READ-ONLY) -->
@@ -981,30 +978,6 @@
         } finally {
             deleteBtn.disabled = false;
             deleteBtn.textContent = "Yes, Clear Entry";
-        }
-    }
-
-    async function syncFromSheet() {
-        const btn = document.getElementById('sync-btn');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = "🔄 Syncing...";
-        }
-        try {
-            const res = await fetch('/api/daily-status?sync=true');
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed to sync from Google Sheet");
-            plainTextReport = data.report || "";
-            copyHtmlReport = data.copyHtml || data.report || "";
-            document.getElementById('report-body').innerHTML = data.htmlReport || "No tasks recorded today.";
-            showToast("✅ Synced latest data from Google Sheet into Redis!", "success");
-        } catch (e) {
-            showToast(`Sync error: ${e.message}`, "error");
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = "🔄 Sync from Sheet";
-            }
         }
     }
 

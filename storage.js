@@ -618,8 +618,7 @@ async function syncTodayFromSheet(date) {
     if (Object.keys(entries).length > 0) {
       await redis.hset(key, entries);
     }
-    await redis.hset(key, { _synced: "true" });
-    await redis.expire(key, 604800);
+    await redis.hset(key, { _synced: "true", _lastSyncTime: String(Date.now()) });
     await redis.expire(key, 604800);
 
     return entries;
@@ -629,20 +628,27 @@ async function syncTodayFromSheet(date) {
   }
 }
 
-async function getTodayEntries(date) {
+async function getTodayEntries(date, { forceSync = false } = {}) {
   requireRedis();
   await ensureRedisInitialized();
   const targetDate = date ? String(date).trim() : getZonedTodayDate();
   const key = todayCatchUpKey(targetDate);
   let entries = (await redis.hgetall(key)) || {};
 
-  // If Redis is cold / empty for today, sync from Google Sheet
-  if (Object.keys(entries).length === 0) {
+  const lastSync = Number(entries._lastSyncTime || 0);
+  const isStale = Date.now() - lastSync > 20000; // Auto-sync if last sync was > 20 seconds ago
+
+  // Automatically sync from Google Sheet if cache is empty or stale (> 20s)
+  if (forceSync || Object.keys(entries).length === 0 || isStale) {
     entries = await syncTodayFromSheet(targetDate);
   }
 
-  const clean = { ...entries };
-  delete clean._synced;
+  const clean = {};
+  for (const [k, v] of Object.entries(entries)) {
+    if (!k.startsWith("_")) {
+      clean[k] = v;
+    }
+  }
   return clean;
 }
 
