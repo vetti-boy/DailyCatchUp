@@ -1,3 +1,12 @@
+Commit: e94ce13df443de415146583a6e27054b0c07cb3f
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Wed Nov 25 10:51:24 2026 +0530
+Subject: feat: enable automatic background sync from sheet on every check and remove manual button
+- Automatically sync from Google Sheet if cache is older than 20 seconds.
+- Automatically sync when any new entry is made.
+- Remove manual 'Sync from Sheet' button from web UI.
+
+--------------------------------------------------------------------------------
 Commit: e612cc6e0041e2d579a8910163bc5ac862a0a411
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Wed Nov 25 10:44:24 2026 +0530
