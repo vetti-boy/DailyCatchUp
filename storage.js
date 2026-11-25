@@ -614,10 +614,12 @@ async function syncTodayFromSheet(date) {
     });
 
     const key = todayCatchUpKey(targetDate);
+    await redis.del(key);
     if (Object.keys(entries).length > 0) {
       await redis.hset(key, entries);
     }
     await redis.hset(key, { _synced: "true" });
+    await redis.expire(key, 604800);
     await redis.expire(key, 604800);
 
     return entries;

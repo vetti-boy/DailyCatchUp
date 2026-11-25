@@ -1,4 +1,4 @@
-const { getTodayStatusData } = require("../storage");
+const { getTodayStatusData, syncTodayFromSheet } = require("../storage");
 
 function escapeXml(value) {
   return String(value || "")
@@ -24,6 +24,9 @@ module.exports = async (req, res) => {
     (req.headers?.accept && req.headers.accept.includes("application/rss+xml"));
 
   try {
+    if (req.query?.sync === "true" || req.query?.force === "true") {
+      await syncTodayFromSheet(req.query?.date);
+    }
     const data = await getTodayStatusData(req.query?.date);
     const now = new Date().toUTCString();
 
