@@ -1,3 +1,12 @@
+Commit: e612cc6e0041e2d579a8910163bc5ac862a0a411
+Author: Manoj S <mailfortempusage@gmail.com>
+Date:   Wed Nov 25 10:44:24 2026 +0530
+Subject: feat: add sync from sheet support to daily-status, feeds, and web UI
+- Add ?sync=true support in api/daily-status.js and api/today-catchup.js to sync sheet data into Redis.
+- Add 'Sync from Sheet' button in web UI.
+- Update syncTodayFromSheet in storage.js to overwrite Redis cache cleanly.
+
+--------------------------------------------------------------------------------
 Commit: 62384d321208891ba0ba6e86f8b5ca16df23c715
 Author: Manoj S <mailfortempusage@gmail.com>
 Date:   Tue Nov 24 13:45:34 2026 +0530
